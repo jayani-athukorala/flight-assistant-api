@@ -1,148 +1,400 @@
 package se.lexicon.flightbooking_api.config;
 
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import se.lexicon.flightbooking_api.entity.FlightBooking;
-import se.lexicon.flightbooking_api.entity.FlightStatus;
-import se.lexicon.flightbooking_api.repository.FlightBookingRepository;
+import se.lexicon.flightbooking_api.entity.*;
+import se.lexicon.flightbooking_api.entity.enums.*;
+import se.lexicon.flightbooking_api.repository.*;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 
 @Component
 @Profile("!test")
 @RequiredArgsConstructor
 public class FlightBookingDataRunner implements CommandLineRunner {
 
-    private final FlightBookingRepository flightBookingRepository;
+    private final UserRepository userRepository;
+    private final FlightRepository flightRepository;
+    private final BookingRepository bookingRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
-    public void run(String... args) {
-        // Available flights (7)
-        FlightBooking flight1 = FlightBooking.builder()
-                .flightNumber("FL001")
-                .departureTime(LocalDateTime.now().plusDays(1))
-                .arrivalTime(LocalDateTime.now().plusDays(1).plusHours(2))
-                .status(FlightStatus.AVAILABLE)
-                .destination("London")
-                .price(199.99)
+    public void run(String @NonNull ... args) {
+
+        if (userRepository.findByEmail("john@test.com").isPresent()) {
+            System.out.println("Sample data already exists. Skipping creation.");
+            return;
+        }
+
+        System.out.println("Creating sample flight booking data...");
+
+        // =====================================================
+        // USERS
+        // =====================================================
+
+        User john = createUser(
+                "john@test.com",
+                "password123",
+                UserRole.USER
+        );
+
+        User jane = createUser(
+                "jane@test.com",
+                "password123",
+                UserRole.USER
+        );
+
+        userRepository.saveAll(
+                List.of(john, jane)
+        );
+
+        // =====================================================
+        // FLIGHTS
+        // =====================================================
+
+        Flight flight1 = createFlight(
+                "FL001",
+                "SAS",
+                "Stockholm",
+                "London",
+                1
+        );
+
+        Flight flight2 = createFlight(
+                "FL002",
+                "Lufthansa",
+                "Berlin",
+                "Paris",
+                2
+        );
+
+        Flight flight3 = createFlight(
+                "FL003",
+                "Ryanair",
+                "Gothenburg",
+                "Rome",
+                3
+        );
+
+        Flight flight4 = createFlight(
+                "FL004",
+                "SAS",
+                "Stockholm",
+                "Copenhagen",
+                4
+        );
+
+        Flight flight5 = createFlight(
+                "FL005",
+                "KLM",
+                "Amsterdam",
+                "Barcelona",
+                5
+        );
+
+        Flight flight6 = createFlight(
+                "FL006",
+                "Lufthansa",
+                "Frankfurt",
+                "Madrid",
+                6
+        );
+
+        Flight flight7 = createFlight(
+                "FL007",
+                "SAS",
+                "Gothenburg",
+                "Paris",
+                7
+        );
+
+        Flight flight8 = createFlight(
+                "FL008",
+                "Ryanair",
+                "Stockholm",
+                "Berlin",
+                8
+        );
+
+        Flight flight9 = createFlight(
+                "FL009",
+                "KLM",
+                "Amsterdam",
+                "Rome",
+                9
+        );
+
+        Flight flight10 = createFlight(
+                "FL010",
+                "SAS",
+                "Stockholm",
+                "Amsterdam",
+                10
+        );
+
+        flightRepository.saveAll(
+                List.of(
+                        flight1,
+                        flight2,
+                        flight3,
+                        flight4,
+                        flight5,
+                        flight6,
+                        flight7,
+                        flight8,
+                        flight9,
+                        flight10
+                )
+        );
+
+        // =====================================================
+        // BOOKINGS
+        // =====================================================
+
+        Booking booking1 = createBooking(
+                john,
+                flight1,
+                null,
+                TripType.ONE_WAY,
+                "John",
+                "Doe",
+                "PASS12345",
+                "john@test.com",
+                599.99
+        );
+
+        Booking booking2 = createBooking(
+                jane,
+                flight2,
+                null,
+                TripType.ONE_WAY,
+                "Jane",
+                "Smith",
+                "PASS67890",
+                "jane@test.com",
+                299.99
+        );
+
+        Booking booking3 = createBooking(
+                john,
+                flight3,
+                flight4,
+                TripType.ROUND_TRIP,
+                "John",
+                "Doe",
+                "PASS54321",
+                "john@test.com",
+                899.99
+        );
+
+        bookingRepository.saveAll(
+                List.of(
+                        booking1,
+                        booking2,
+                        booking3
+                )
+        );
+
+        System.out.println("======================================");
+        System.out.println("Sample data created successfully");
+        System.out.println("Users: " + userRepository.count());
+        System.out.println("Flights: " + flightRepository.count());
+        System.out.println("Bookings: " + bookingRepository.count());
+        System.out.println("======================================");
+        System.out.println("Test login:");
+        System.out.println("john@test.com / password123");
+        System.out.println("jane@test.com / password123");
+    }
+
+    // =========================================================
+    // USER
+    // =========================================================
+
+    private User createUser(
+            String email,
+            String password,
+            UserRole role
+    ) {
+
+        return User.builder()
+                .email(email)
+                .password(
+                        passwordEncoder.encode(password)
+                )
+                .role(role)
                 .build();
+    }
 
-        FlightBooking flight2 = FlightBooking.builder()
-                .flightNumber("FL002")
-                .departureTime(LocalDateTime.now().plusDays(2))
-                .arrivalTime(LocalDateTime.now().plusDays(2).plusHours(3))
-                .status(FlightStatus.AVAILABLE)
-                .destination("Paris")
-                .price(249.99)
-                .build();
 
-        FlightBooking flight3 = FlightBooking.builder()
-                .flightNumber("FL003")
-                .departureTime(LocalDateTime.now().plusDays(3))
-                .arrivalTime(LocalDateTime.now().plusDays(3).plusHours(4))
-                .status(FlightStatus.AVAILABLE)
-                .destination("Rome")
-                .price(299.99)
-                .build();
+    // =========================================================
+    // FLIGHT
+    // =========================================================
 
-        FlightBooking flight4 = FlightBooking.builder()
-                .flightNumber("FL004")
-                .departureTime(LocalDateTime.now().plusDays(4))
-                .arrivalTime(LocalDateTime.now().plusDays(4).plusHours(1))
-                .status(FlightStatus.AVAILABLE)
-                .destination("Amsterdam")
-                .price(179.99)
-                .build();
+    private Flight createFlight(
+            String flightNumber,
+            String airline,
+            String origin,
+            String destination,
+            int daysLater
+    ) {
 
-        FlightBooking flight5 = FlightBooking.builder()
-                .flightNumber("FL005")
-                .departureTime(LocalDateTime.now().plusDays(5))
-                .arrivalTime(LocalDateTime.now().plusDays(5).plusHours(3))
-                .status(FlightStatus.AVAILABLE)
-                .destination("Barcelona")
-                .price(229.99)
-                .build();
+        LocalDateTime departure =
+                LocalDateTime.now()
+                        .plusDays(daysLater)
+                        .withHour(10)
+                        .withMinute(0)
+                        .withSecond(0)
+                        .withNano(0);
 
-        FlightBooking flight6 = FlightBooking.builder()
-                .flightNumber("FL006")
-                .departureTime(LocalDateTime.now().plusDays(6))
-                .arrivalTime(LocalDateTime.now().plusDays(6).plusHours(2))
-                .status(FlightStatus.AVAILABLE)
-                .destination("Berlin")
-                .price(189.99)
-                .build();
+        Flight flight =
+                Flight.builder()
+                        .flightNumber(flightNumber)
+                        .airline(airline)
+                        .origin(origin)
+                        .destination(destination)
+                        .departureTime(departure)
+                        .arrivalTime(departure.plusHours(3))
+                        .status(FlightStatus.AVAILABLE)
+                        .build();
 
-        FlightBooking flight7 = FlightBooking.builder()
-                .flightNumber("FL007")
-                .departureTime(LocalDateTime.now().plusDays(7))
-                .arrivalTime(LocalDateTime.now().plusDays(7).plusHours(3))
-                .status(FlightStatus.AVAILABLE)
-                .destination("Vienna")
-                .price(259.99)
-                .build();
+        createSeats(flight);
 
-        // Booked flights (3)
-        FlightBooking bookedFlight1 = FlightBooking.builder()
-                .flightNumber("FL008")
-                .passengerName("John Doe")
-                .passengerEmail("john.doe@example.com")
-                .departureTime(LocalDateTime.now().plusDays(1))
-                .arrivalTime(LocalDateTime.now().plusDays(1).plusHours(2))
-                .status(FlightStatus.BOOKED)
-                .destination("Madrid")
-                .price(219.99)
-                .build();
+        return flight;
+    }
 
-        FlightBooking bookedFlight2 = FlightBooking.builder()
-                .flightNumber("FL009")
-                .passengerName("Jane Smith")
-                .passengerEmail("jane.smith@example.com")
-                .departureTime(LocalDateTime.now().plusDays(2))
-                .arrivalTime(LocalDateTime.now().plusDays(2).plusHours(3))
-                .status(FlightStatus.BOOKED)
-                .destination("Prague")
-                .price(199.99)
-                .build();
 
-        FlightBooking bookedFlight3 = FlightBooking.builder()
-                .flightNumber("FL010")
-                .passengerName("Mike Johnson")
-                .passengerEmail("mike.johnson@example.com")
-                .departureTime(LocalDateTime.now().plusDays(3))
-                .arrivalTime(LocalDateTime.now().plusDays(3).plusHours(2))
-                .status(FlightStatus.BOOKED)
-                .destination("Copenhagen")
-                .price(239.99)
-                .build();
+    // =========================================================
+    // SEATS
+    // =========================================================
 
-        // Save all flights
-        Arrays.asList(flight1, flight2, flight3, flight4, flight5, flight6, flight7,
-                        bookedFlight1, bookedFlight2, bookedFlight3)
-                .forEach(flight -> {
-                    try {
-                        flightBookingRepository.save(flight);
-                        System.out.println("Created flight: " + flight.getFlightNumber() +
-                                " (Status: " + flight.getStatus() +
-                                ", Destination: " + flight.getDestination() + ")");
-                    } catch (Exception e) {
-                        System.err.println("Error creating flight: " + flight.getFlightNumber() +
-                                " - " + e.getMessage());
-                    }
-                });
+    private void createSeats(Flight flight) {
 
-        // Print summary
-        System.out.println("\nFlight Booking Statistics:");
-        System.out.println("Total flights: " + flightBookingRepository.findAll().size());
-        System.out.println("Available flights: " +
-                flightBookingRepository.findAll().stream()
-                        .filter(f -> f.getStatus() == FlightStatus.AVAILABLE)
-                        .count());
-        System.out.println("Booked flights: " +
-                flightBookingRepository.findAll().stream()
-                        .filter(f -> f.getStatus() == FlightStatus.BOOKED)
-                        .count());
+        // 5 Economy
+        for (int i = 1; i <= 5; i++) {
+
+            addSeat(
+                    flight,
+                    "E" + i,
+                    SeatClass.ECONOMY,
+                    199.99
+            );
+        }
+
+        // 2 Premium Economy
+        for (int i = 1; i <= 2; i++) {
+
+            addSeat(
+                    flight,
+                    "PE" + i,
+                    SeatClass.PREMIUM_ECONOMY,
+                    299.99
+            );
+        }
+
+        // 2 Business
+        for (int i = 1; i <= 2; i++) {
+
+            addSeat(
+                    flight,
+                    "B" + i,
+                    SeatClass.BUSINESS,
+                    599.99
+            );
+        }
+
+        // 1 First Class
+        addSeat(
+                flight,
+                "F1",
+                SeatClass.FIRST_CLASS,
+                999.99
+        );
+    }
+
+
+    private void addSeat(
+            Flight flight,
+            String seatNumber,
+            SeatClass seatClass,
+            double price
+    ) {
+
+        FlightSeat seat =
+                FlightSeat.builder()
+                        .seatNumber(seatNumber)
+                        .seatClass(seatClass)
+                        .price(price)
+                        .flight(flight)
+                        .build();
+
+        flight.getSeats().add(seat);
+    }
+
+
+    // =========================================================
+    // BOOKING
+    // =========================================================
+
+    private Booking createBooking(
+            User user,
+            Flight outboundFlight,
+            Flight returnFlight,
+            TripType tripType,
+            String firstName,
+            String lastName,
+            String passportNumber,
+            String email,
+            double totalPrice
+    ) {
+
+        Passenger passenger =
+                Passenger.builder()
+                        .firstName(firstName)
+                        .lastName(lastName)
+                        .passportNumber(passportNumber)
+                        .email(email)
+                        .build();
+
+
+        Booking booking =
+                Booking.builder()
+                        .user(user)
+                        .bookingReference(
+                                generateBookingReference()
+                        )
+                        .bookingDate(
+                                LocalDateTime.now()
+                        )
+                        .status(
+                                BookingStatus.CONFIRMED
+                        )
+                        .tripType(tripType)
+                        .outboundFlight(outboundFlight)
+                        .returnFlight(returnFlight)
+                        .totalPrice(totalPrice)
+                        .build();
+
+
+        booking.addPassenger(passenger);
+
+
+        return booking;
+    }
+
+
+    private String generateBookingReference() {
+
+        return "FB-"
+                +
+                UUID.randomUUID()
+                        .toString()
+                        .substring(0, 8)
+                        .toUpperCase();
     }
 }
