@@ -11,6 +11,7 @@ import se.lexicon.flightbooking_api.entity.enums.*;
 import se.lexicon.flightbooking_api.repository.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,106 +57,459 @@ public class FlightBookingDataRunner implements CommandLineRunner {
 
         // =====================================================
         // FLIGHTS
+        //
+        // IMPORTANT:
+        // The same flight number may appear on different dates.
+        //
+        // Example:
+        // SK1234 - Gothenburg -> Paris - Aug 10
+        // SK1234 - Gothenburg -> Paris - Aug 13
+        //
+        // Return flights are separate Flight entities:
+        //
+        // SK1235 - Paris -> Gothenburg - Aug 15
         // =====================================================
 
-        Flight flight1 = createFlight(
-                "FL001",
+        List<Flight> flights = new ArrayList<>();
+
+        // -----------------------------------------------------
+        // AUGUST 9, 2026 - 5 FLIGHTS
+        // -----------------------------------------------------
+
+        flights.add(createFlight(
+                "SK1001",
                 "SAS",
                 "Stockholm",
                 "London",
-                1
-        );
+                LocalDateTime.of(2026, 8, 9, 7, 30)
+        ));
 
-        Flight flight2 = createFlight(
-                "FL002",
+        flights.add(createFlight(
+                "LH2001",
                 "Lufthansa",
                 "Berlin",
                 "Paris",
-                2
-        );
+                LocalDateTime.of(2026, 8, 9, 9, 15)
+        ));
 
-        Flight flight3 = createFlight(
-                "FL003",
+        flights.add(createFlight(
+                "FR3001",
                 "Ryanair",
                 "Gothenburg",
                 "Rome",
-                3
-        );
+                LocalDateTime.of(2026, 8, 9, 11, 45)
+        ));
 
-        Flight flight4 = createFlight(
-                "FL004",
+        flights.add(createFlight(
+                "SK1002",
                 "SAS",
                 "Stockholm",
                 "Copenhagen",
-                4
-        );
+                LocalDateTime.of(2026, 8, 9, 14, 30)
+        ));
 
-        Flight flight5 = createFlight(
-                "FL005",
+        flights.add(createFlight(
+                "KL4001",
                 "KLM",
                 "Amsterdam",
                 "Barcelona",
-                5
-        );
+                LocalDateTime.of(2026, 8, 9, 18, 00)
+        ));
 
-        Flight flight6 = createFlight(
-                "FL006",
+        // -----------------------------------------------------
+        // AUGUST 10, 2026 - 7 FLIGHTS
+        // -----------------------------------------------------
+
+        flights.add(createFlight(
+                "LH2002",
                 "Lufthansa",
                 "Frankfurt",
                 "Madrid",
-                6
-        );
+                LocalDateTime.of(2026, 8, 10, 6, 45)
+        ));
 
-        Flight flight7 = createFlight(
-                "FL007",
+        // GOTHENBURG -> PARIS
+        flights.add(createFlight(
+                "SK1234",
                 "SAS",
                 "Gothenburg",
                 "Paris",
-                7
-        );
+                LocalDateTime.of(2026, 8, 10, 8, 30)
+        ));
 
-        Flight flight8 = createFlight(
-                "FL008",
+        flights.add(createFlight(
+                "FR3002",
                 "Ryanair",
                 "Stockholm",
                 "Berlin",
-                8
-        );
+                LocalDateTime.of(2026, 8, 10, 10, 15)
+        ));
 
-        Flight flight9 = createFlight(
-                "FL009",
+        flights.add(createFlight(
+                "KL4002",
                 "KLM",
                 "Amsterdam",
                 "Rome",
-                9
-        );
+                LocalDateTime.of(2026, 8, 10, 13, 00)
+        ));
 
-        Flight flight10 = createFlight(
-                "FL010",
+        flights.add(createFlight(
+                "SK1003",
                 "SAS",
                 "Stockholm",
                 "Amsterdam",
-                10
-        );
+                LocalDateTime.of(2026, 8, 10, 15, 45)
+        ));
 
-        flightRepository.saveAll(
-                List.of(
-                        flight1,
-                        flight2,
-                        flight3,
-                        flight4,
-                        flight5,
-                        flight6,
-                        flight7,
-                        flight8,
-                        flight9,
-                        flight10
-                )
-        );
+        flights.add(createFlight(
+                "LH2003",
+                "Lufthansa",
+                "Berlin",
+                "Vienna",
+                LocalDateTime.of(2026, 8, 10, 19, 15)
+        ));
+
+        // RETURN FLIGHT: PARIS -> GOTHENBURG
+        flights.add(createFlight(
+                "SK1235",
+                "SAS",
+                "Paris",
+                "Gothenburg",
+                LocalDateTime.of(2026, 8, 10, 20, 30)
+        ));
+
+        // -----------------------------------------------------
+        // AUGUST 11, 2026 - 6 FLIGHTS
+        // -----------------------------------------------------
+
+        flights.add(createFlight(
+                "SK1101",
+                "SAS",
+                "Gothenburg",
+                "London",
+                LocalDateTime.of(2026, 8, 11, 8, 00)
+        ));
+
+        flights.add(createFlight(
+                "KL4101",
+                "KLM",
+                "Amsterdam",
+                "Paris",
+                LocalDateTime.of(2026, 8, 11, 11, 30)
+        ));
+
+        flights.add(createFlight(
+                "LH2101",
+                "Lufthansa",
+                "Frankfurt",
+                "Rome",
+                LocalDateTime.of(2026, 8, 11, 14, 15)
+        ));
+
+        flights.add(createFlight(
+                "FR3101",
+                "Ryanair",
+                "Stockholm",
+                "Barcelona",
+                LocalDateTime.of(2026, 8, 11, 18, 45)
+        ));
+
+        // Same flight number as Aug 10.
+        // This demonstrates that a flight number can repeat
+        // on another date.
+        flights.add(createFlight(
+                "SK1234",
+                "SAS",
+                "Gothenburg",
+                "Paris",
+                LocalDateTime.of(2026, 8, 11, 9, 45)
+        ));
+
+        flights.add(createFlight(
+                "SK1235",
+                "SAS",
+                "Paris",
+                "Gothenburg",
+                LocalDateTime.of(2026, 8, 11, 17, 30)
+        ));
+
+        // -----------------------------------------------------
+        // AUGUST 12, 2026 - 8 FLIGHTS
+        // -----------------------------------------------------
+
+        flights.add(createFlight(
+                "SK1201",
+                "SAS",
+                "Stockholm",
+                "Berlin",
+                LocalDateTime.of(2026, 8, 12, 6, 30)
+        ));
+
+        flights.add(createFlight(
+                "LH2201",
+                "Lufthansa",
+                "Berlin",
+                "London",
+                LocalDateTime.of(2026, 8, 12, 8, 15)
+        ));
+
+        flights.add(createFlight(
+                "FR3201",
+                "Ryanair",
+                "Gothenburg",
+                "Barcelona",
+                LocalDateTime.of(2026, 8, 12, 10, 00)
+        ));
+
+        flights.add(createFlight(
+                "KL4201",
+                "KLM",
+                "Amsterdam",
+                "Madrid",
+                LocalDateTime.of(2026, 8, 12, 12, 30)
+        ));
+
+        flights.add(createFlight(
+                "SK1202",
+                "SAS",
+                "Stockholm",
+                "Paris",
+                LocalDateTime.of(2026, 8, 12, 15, 00)
+        ));
+
+        flights.add(createFlight(
+                "LH2202",
+                "Lufthansa",
+                "Frankfurt",
+                "Copenhagen",
+                LocalDateTime.of(2026, 8, 12, 17, 30)
+        ));
+
+        flights.add(createFlight(
+                "FR3202",
+                "Ryanair",
+                "Gothenburg",
+                "Rome",
+                LocalDateTime.of(2026, 8, 12, 20, 15)
+        ));
+
+        // RETURN FLIGHT
+        flights.add(createFlight(
+                "SK1235",
+                "SAS",
+                "Paris",
+                "Gothenburg",
+                LocalDateTime.of(2026, 8, 12, 21, 00)
+        ));
+
+        // -----------------------------------------------------
+        // AUGUST 13, 2026 - 7 FLIGHTS
+        // -----------------------------------------------------
+
+        flights.add(createFlight(
+                "SK1301",
+                "SAS",
+                "Stockholm",
+                "Oslo",
+                LocalDateTime.of(2026, 8, 13, 7, 45)
+        ));
+
+        flights.add(createFlight(
+                "LH2301",
+                "Lufthansa",
+                "Berlin",
+                "Madrid",
+                LocalDateTime.of(2026, 8, 13, 10, 30)
+        ));
+
+        flights.add(createFlight(
+                "KL4301",
+                "KLM",
+                "Amsterdam",
+                "London",
+                LocalDateTime.of(2026, 8, 13, 13, 15)
+        ));
+
+        // GOTHENBURG -> PARIS
+        // Same flight number as Aug 10 and Aug 11.
+        flights.add(createFlight(
+                "SK1234",
+                "SAS",
+                "Gothenburg",
+                "Paris",
+                LocalDateTime.of(2026, 8, 13, 16, 00)
+        ));
+
+        flights.add(createFlight(
+                "SK1302",
+                "SAS",
+                "Stockholm",
+                "Rome",
+                LocalDateTime.of(2026, 8, 13, 19, 30)
+        ));
+
+        // PARIS -> GOTHENBURG
+        flights.add(createFlight(
+                "SK1235",
+                "SAS",
+                "Paris",
+                "Gothenburg",
+                LocalDateTime.of(2026, 8, 13, 20, 30)
+        ));
+
+        flights.add(createFlight(
+                "FR3301",
+                "Ryanair",
+                "Gothenburg",
+                "Milan",
+                LocalDateTime.of(2026, 8, 13, 21, 15)
+        ));
+
+        // -----------------------------------------------------
+        // AUGUST 14, 2026 - 7 FLIGHTS
+        // -----------------------------------------------------
+
+        flights.add(createFlight(
+                "LH2401",
+                "Lufthansa",
+                "Frankfurt",
+                "Paris",
+                LocalDateTime.of(2026, 8, 14, 6, 45)
+        ));
+
+        flights.add(createFlight(
+                "SK1401",
+                "SAS",
+                "Gothenburg",
+                "Amsterdam",
+                LocalDateTime.of(2026, 8, 14, 8, 30)
+        ));
+
+        flights.add(createFlight(
+                "FR3401",
+                "Ryanair",
+                "Stockholm",
+                "Madrid",
+                LocalDateTime.of(2026, 8, 14, 11, 00)
+        ));
+
+        flights.add(createFlight(
+                "KL4401",
+                "KLM",
+                "Amsterdam",
+                "Barcelona",
+                LocalDateTime.of(2026, 8, 14, 13, 45)
+        ));
+
+        flights.add(createFlight(
+                "SK1402",
+                "SAS",
+                "Stockholm",
+                "Copenhagen",
+                LocalDateTime.of(2026, 8, 14, 16, 30)
+        ));
+
+        flights.add(createFlight(
+                "LH2402",
+                "Lufthansa",
+                "Berlin",
+                "Vienna",
+                LocalDateTime.of(2026, 8, 14, 19, 00)
+        ));
+
+        // RETURN FLIGHT
+        flights.add(createFlight(
+                "SK1235",
+                "SAS",
+                "Paris",
+                "Gothenburg",
+                LocalDateTime.of(2026, 8, 14, 21, 00)
+        ));
+
+        // -----------------------------------------------------
+        // AUGUST 15, 2026 - 7 FLIGHTS
+        // -----------------------------------------------------
+
+        flights.add(createFlight(
+                "SK1501",
+                "SAS",
+                "Gothenburg",
+                "London",
+                LocalDateTime.of(2026, 8, 15, 7, 30)
+        ));
+
+        flights.add(createFlight(
+                "FR3501",
+                "Ryanair",
+                "Stockholm",
+                "Berlin",
+                LocalDateTime.of(2026, 8, 15, 10, 15)
+        ));
+
+        flights.add(createFlight(
+                "KL4501",
+                "KLM",
+                "Amsterdam",
+                "Rome",
+                LocalDateTime.of(2026, 8, 15, 14, 00)
+        ));
+
+        flights.add(createFlight(
+                "LH2501",
+                "Lufthansa",
+                "Frankfurt",
+                "Madrid",
+                LocalDateTime.of(2026, 8, 15, 18, 30)
+        ));
+
+        // GOTHENBURG -> PARIS
+        flights.add(createFlight(
+                "SK1234",
+                "SAS",
+                "Gothenburg",
+                "Paris",
+                LocalDateTime.of(2026, 8, 15, 9, 00)
+        ));
+
+        // PARIS -> GOTHENBURG
+        flights.add(createFlight(
+                "SK1235",
+                "SAS",
+                "Paris",
+                "Gothenburg",
+                LocalDateTime.of(2026, 8, 15, 17, 00)
+        ));
+
+        flights.add(createFlight(
+                "FR3502",
+                "Ryanair",
+                "Gothenburg",
+                "Rome",
+                LocalDateTime.of(2026, 8, 15, 20, 30)
+        ));
+
+        // =====================================================
+        // SAVE ALL FLIGHTS
+        // =====================================================
+
+        flightRepository.saveAll(flights);
 
         // =====================================================
         // BOOKINGS
         // =====================================================
+
+        // -----------------------------------------------------
+        // ONE-WAY BOOKING
+        // Stockholm -> London
+        // -----------------------------------------------------
+
+        Flight flight1 = findFlight(
+                flights,
+                "SK1001",
+                "Stockholm",
+                "London",
+                LocalDateTime.of(2026, 8, 9, 7, 30)
+        );
 
         Booking booking1 = createBooking(
                 john,
@@ -167,6 +521,19 @@ public class FlightBookingDataRunner implements CommandLineRunner {
                 "PASS12345",
                 "john@test.com",
                 599.99
+        );
+
+        // -----------------------------------------------------
+        // ONE-WAY BOOKING
+        // Berlin -> Paris
+        // -----------------------------------------------------
+
+        Flight flight2 = findFlight(
+                flights,
+                "LH2001",
+                "Berlin",
+                "Paris",
+                LocalDateTime.of(2026, 8, 9, 9, 15)
         );
 
         Booking booking2 = createBooking(
@@ -181,10 +548,36 @@ public class FlightBookingDataRunner implements CommandLineRunner {
                 299.99
         );
 
+        // -----------------------------------------------------
+        // ROUND-TRIP BOOKING
+        //
+        // Gothenburg -> Paris
+        // Paris -> Gothenburg
+        //
+        // Outbound: August 10
+        // Return:   August 15
+        // -----------------------------------------------------
+
+        Flight gothenburgToParis = findFlight(
+                flights,
+                "SK1234",
+                "Gothenburg",
+                "Paris",
+                LocalDateTime.of(2026, 8, 10, 8, 30)
+        );
+
+        Flight parisToGothenburg = findFlight(
+                flights,
+                "SK1235",
+                "Paris",
+                "Gothenburg",
+                LocalDateTime.of(2026, 8, 15, 17, 00)
+        );
+
         Booking booking3 = createBooking(
                 john,
-                flight3,
-                flight4,
+                gothenburgToParis,
+                parisToGothenburg,
                 TripType.ROUND_TRIP,
                 "John",
                 "Doe",
@@ -201,15 +594,97 @@ public class FlightBookingDataRunner implements CommandLineRunner {
                 )
         );
 
+        // =====================================================
+        // SUMMARY
+        // =====================================================
+
         System.out.println("======================================");
         System.out.println("Sample data created successfully");
         System.out.println("Users: " + userRepository.count());
         System.out.println("Flights: " + flightRepository.count());
         System.out.println("Bookings: " + bookingRepository.count());
         System.out.println("======================================");
+
+        System.out.println("Flights created for:");
+
+        System.out.println("August 09, 2026: 5 flights");
+        System.out.println("August 10, 2026: 7 flights");
+        System.out.println("August 11, 2026: 6 flights");
+        System.out.println("August 12, 2026: 8 flights");
+        System.out.println("August 13, 2026: 7 flights");
+        System.out.println("August 14, 2026: 7 flights");
+        System.out.println("August 15, 2026: 7 flights");
+
+        System.out.println("Total flights: " + flights.size());
+
+        System.out.println("======================================");
+        System.out.println("Example repeated flight numbers:");
+        System.out.println("SK1234 - Gothenburg -> Paris");
+        System.out.println("  Aug 10, 2026 08:30");
+        System.out.println("  Aug 11, 2026 09:45");
+        System.out.println("  Aug 13, 2026 16:00");
+        System.out.println("  Aug 15, 2026 09:00");
+
+        System.out.println("--------------------------------------");
+
+        System.out.println("SK1235 - Paris -> Gothenburg");
+        System.out.println("  Aug 10, 2026 20:30");
+        System.out.println("  Aug 11, 2026 17:30");
+        System.out.println("  Aug 12, 2026 21:00");
+        System.out.println("  Aug 13, 2026 20:30");
+        System.out.println("  Aug 14, 2026 21:00");
+        System.out.println("  Aug 15, 2026 17:00");
+
+        System.out.println("======================================");
+        System.out.println("Round-trip sample booking:");
+        System.out.println("Gothenburg -> Paris");
+        System.out.println("SK1234 - August 10, 2026 08:30");
+        System.out.println();
+        System.out.println("Paris -> Gothenburg");
+        System.out.println("SK1235 - August 15, 2026 17:00");
+
+        System.out.println("======================================");
         System.out.println("Test login:");
         System.out.println("john@test.com / password123");
         System.out.println("jane@test.com / password123");
+        System.out.println("======================================");
+    }
+
+    // =========================================================
+    // FIND FLIGHT
+    //
+    // We deliberately search using flight number AND date/time
+    // AND route because flight number alone is not unique.
+    // =========================================================
+
+    private Flight findFlight(
+            List<Flight> flights,
+            String flightNumber,
+            String origin,
+            String destination,
+            LocalDateTime departure
+    ) {
+
+        return flights.stream()
+                .filter(flight ->
+                        flight.getFlightNumber().equals(flightNumber)
+                                && flight.getOrigin().equals(origin)
+                                && flight.getDestination().equals(destination)
+                                && flight.getDepartureTime().equals(departure)
+                )
+                .findFirst()
+                .orElseThrow(() ->
+                        new IllegalStateException(
+                                "Flight not found: "
+                                        + flightNumber
+                                        + " "
+                                        + origin
+                                        + " -> "
+                                        + destination
+                                        + " at "
+                                        + departure
+                        )
+                );
     }
 
     // =========================================================
@@ -231,7 +706,6 @@ public class FlightBookingDataRunner implements CommandLineRunner {
                 .build();
     }
 
-
     // =========================================================
     // FLIGHT
     // =========================================================
@@ -241,16 +715,8 @@ public class FlightBookingDataRunner implements CommandLineRunner {
             String airline,
             String origin,
             String destination,
-            int daysLater
+            LocalDateTime departure
     ) {
-
-        LocalDateTime departure =
-                LocalDateTime.now()
-                        .plusDays(daysLater)
-                        .withHour(10)
-                        .withMinute(0)
-                        .withSecond(0)
-                        .withNano(0);
 
         Flight flight =
                 Flight.builder()
@@ -267,7 +733,6 @@ public class FlightBookingDataRunner implements CommandLineRunner {
 
         return flight;
     }
-
 
     // =========================================================
     // SEATS
@@ -317,7 +782,6 @@ public class FlightBookingDataRunner implements CommandLineRunner {
         );
     }
 
-
     private void addSeat(
             Flight flight,
             String seatNumber,
@@ -335,7 +799,6 @@ public class FlightBookingDataRunner implements CommandLineRunner {
 
         flight.getSeats().add(seat);
     }
-
 
     // =========================================================
     // BOOKING
@@ -361,7 +824,6 @@ public class FlightBookingDataRunner implements CommandLineRunner {
                         .email(email)
                         .build();
 
-
         Booking booking =
                 Booking.builder()
                         .user(user)
@@ -380,13 +842,14 @@ public class FlightBookingDataRunner implements CommandLineRunner {
                         .totalPrice(totalPrice)
                         .build();
 
-
         booking.addPassenger(passenger);
-
 
         return booking;
     }
 
+    // =========================================================
+    // BOOKING REFERENCE
+    // =========================================================
 
     private String generateBookingReference() {
 
