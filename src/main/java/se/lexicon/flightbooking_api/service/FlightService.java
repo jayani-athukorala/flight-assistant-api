@@ -12,4 +12,5 @@ public interface FlightService {
     FlightDto getFlightById(Long id);
     FlightDto createFlight(CreateFlightDto dto);
     void deleteFlight(Long id);
+    void updateDepartedFlights();
 }

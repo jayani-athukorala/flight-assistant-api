@@ -7,14 +7,19 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import se.lexicon.flightbooking_api.dto.booking.BookingRequestDto;
 import se.lexicon.flightbooking_api.dto.booking.BookingResponseDto;
+import se.lexicon.flightbooking_api.entity.enums.BookingStatus;
+import se.lexicon.flightbooking_api.service.BookingAdminService;
 import se.lexicon.flightbooking_api.service.BookingService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -27,13 +32,13 @@ import java.util.List;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final BookingAdminService bookingAdminService;
 
     // -------------------------------------------------
     // CREATE BOOKING
     // -------------------------------------------------
 
-    @PostMapping("/{flightId}/book")
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @Operation(
             summary = "Book a flight",
             description = "Creates a booking for the authenticated user",
@@ -58,28 +63,19 @@ public class BookingController {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Flight not found"
+                    description = "Flight or seat not found"
             )
     })
-    public ResponseEntity<BookingResponseDto> bookFlight(
-            @PathVariable Long flightId,
+    @PostMapping
+    public ResponseEntity<BookingResponseDto> createBooking(
             @Valid @RequestBody BookingRequestDto request
     ) {
-
-        BookingRequestDto updatedRequest =
-                new BookingRequestDto(
-                        flightId,
-                        request.returnFlightId(),
-                        request.tripType(),
-                        request.seatClass(),
-                        request.passengers()
-                );
+        BookingResponseDto booking =
+                bookingService.createBooking(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(
-                        bookingService.createBooking(updatedRequest)
-                );
+                .body(booking);
     }
 
     // -------------------------------------------------
@@ -114,12 +110,22 @@ public class BookingController {
         );
     }
 
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<List<BookingResponseDto>> getMyBookings(
+            @RequestParam(defaultValue = "false") boolean archived
+    ) {
+        return ResponseEntity.ok(
+                bookingService.getMyBookings(archived)
+        );
+    }
+
     // -------------------------------------------------
     // CANCEL BOOKING
     // -------------------------------------------------
 
-    @DeleteMapping("/{bookingId}/cancel")
-    @PreAuthorize("hasRole('USER')")
+    @PatchMapping("/{bookingId}/cancel")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @Operation(
             summary = "Cancel my booking",
             description = "Cancels a booking belonging to the authenticated user",
@@ -146,9 +152,49 @@ public class BookingController {
     public ResponseEntity<Void> cancelBooking(
             @PathVariable Long bookingId
     ) {
-
         bookingService.cancelBooking(bookingId);
-
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{bookingId}/archive")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Void> archiveBooking(
+            @PathVariable Long bookingId
+    ) {
+        bookingService.archiveBooking(bookingId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{bookingId}/restore")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Void> restoreBooking(
+            @PathVariable Long bookingId
+    ) {
+        bookingService.restoreArchivedBooking(bookingId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/admin/bookings")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Page<BookingResponseDto> searchBookings(
+            @RequestParam(required = false) BookingStatus status,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String passportNumber,
+            @RequestParam(required = false) Long flightId,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to,
+            @RequestParam(required = false) Boolean archived,
+            Pageable pageable
+    ) {
+        return bookingAdminService.searchBookings(
+                status,
+                email,
+                passportNumber,
+                flightId,
+                from,
+                to,
+                archived,
+                pageable
+        );
     }
 }

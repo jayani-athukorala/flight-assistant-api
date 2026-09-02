@@ -10,7 +10,4 @@ public interface FlightSeatService {
 
     List<FlightSeatDto> getAvailableSeats(Long flightId);
     List<FlightSeatDto> getAvailableSeatsByClass(Long flightId, SeatClass seatClass);
-//    void reserveSeat(Long seatId, Booking booking);
-    void releaseSeat(Long seatId);
-
 }

@@ -24,13 +24,17 @@ public class FlightSeatController {
 
     private final FlightSeatService flightSeatService;
 
-
+    /**
+     * Get all available seats for a flight.
+     * Example:
+     * GET /api/flights/1/seats
+     */
     @GetMapping("/{flightId}/seats")
     @Operation(
             summary = "Get available seats",
             description = "Returns all available seats for a flight"
     )
-    @ApiResponses(value = {
+    @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
                     description = "Seats retrieved successfully"
@@ -40,7 +44,7 @@ public class FlightSeatController {
                     description = "Flight not found"
             )
     })
-    public ResponseEntity<List<FlightSeatDto>> getSeats(
+    public ResponseEntity<List<FlightSeatDto>> getAvailableSeats(
             @PathVariable Long flightId
     ) {
 
@@ -49,13 +53,19 @@ public class FlightSeatController {
         );
     }
 
-
+    /**
+     * Get available seats for a specific seat class.
+     * Example:
+     * GET /api/flights/1/seats/class?seatClass=ECONOMY
+     * Example:
+     * GET /api/flights/1/seats/class?seatClass=BUSINESS
+     */
     @GetMapping("/{flightId}/seats/class")
     @Operation(
             summary = "Get available seats by class",
             description = "Returns available seats filtered by seat class"
     )
-    @ApiResponses(value = {
+    @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
                     description = "Seats retrieved successfully"
@@ -65,7 +75,7 @@ public class FlightSeatController {
                     description = "Flight not found"
             )
     })
-    public ResponseEntity<List<FlightSeatDto>> getSeatsByClass(
+    public ResponseEntity<List<FlightSeatDto>> getAvailableSeatsByClass(
             @PathVariable Long flightId,
             @RequestParam SeatClass seatClass
     ) {

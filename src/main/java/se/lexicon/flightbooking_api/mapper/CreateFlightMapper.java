@@ -8,10 +8,10 @@ import se.lexicon.flightbooking_api.entity.Flight;
 @Mapper(componentModel = "spring")
 public interface CreateFlightMapper {
 
-
-    @Mapping(target="id", ignore=true)
-    @Mapping(target="status", ignore=true)
-    @Mapping(target="seats", ignore=true)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "origin", ignore = true)
+    @Mapping(target = "destination", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "seats", ignore = true)
     Flight toEntity(CreateFlightDto dto);
-
 }

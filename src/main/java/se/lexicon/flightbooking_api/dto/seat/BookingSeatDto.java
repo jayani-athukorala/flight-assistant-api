@@ -2,11 +2,14 @@ package se.lexicon.flightbooking_api.dto.seat;
 
 import se.lexicon.flightbooking_api.entity.enums.SeatClass;
 
-public record BookedSeatDto(
+import java.math.BigDecimal;
 
+public record BookingSeatDto(
         Long id,
+        Long passengerId,
+        Long flightId,
+        Long flightSeatId,
         String seatNumber,
         SeatClass seatClass,
-        Double price
-
+        BigDecimal price
 ) {}

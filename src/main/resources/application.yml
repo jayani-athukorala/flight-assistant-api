@@ -3,27 +3,44 @@ spring:
     name: flight-booking-api
 
   datasource:
-    url: jdbc:mysql://localhost:3306/flight_booking_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: root
-    password: root
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/flight_booking_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 2
 
   jpa:
-    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    database-platform: org.hibernate.dialect.MySQLDialect
+    defer-datasource-initialization: ${SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION:true}
+    open-in-view: false
     show-sql: false
     properties:
       hibernate:
         format_sql: false
+        jdbc:
+          time_zone: UTC
 
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-    enabled: true
+  sql:
+    init:
+      # Disabled by default because MySQL data is persistent.
+      # Execute seed_data.sql manually after users are created.
+      mode: ${SPRING_SQL_INIT_MODE:never}
+      data-locations: classpath:seed_data.sql
+      continue-on-error: false
 
-  swagger-ui:
-    path: /swagger-ui.html
-    enabled: true
+  jackson:
+    time-zone: UTC
+  web:
+    error:
+      include-message: always
+
+server:
+  port: ${SERVER_PORT:8080}
 
 app:
   cors:
@@ -34,6 +51,7 @@ app:
       - GET
       - POST
       - PUT
+      - PATCH
       - DELETE
       - OPTIONS
     allowed-headers:
@@ -41,5 +59,21 @@ app:
     allow-credentials: true
 
 jwt:
-  secret: ${JWT_SECRET:VGhpc0lzQVN1ZmZpY2llbnRseUxvbmdTZWNyZXRLZXlGb3JGbGlnaHRCb29raW5nQXBpMjAyNg==}
+  secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400000}
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+
+logging:
+  level:
+    root: INFO
+    se.lexicon.flightbooking_api: INFO
+    org.springframework.jdbc.datasource.init: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN

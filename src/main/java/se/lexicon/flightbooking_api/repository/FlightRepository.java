@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 import se.lexicon.flightbooking_api.entity.Flight;
 import se.lexicon.flightbooking_api.entity.enums.FlightStatus;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,4 +21,6 @@ public interface FlightRepository extends JpaRepository<Flight, Long> {
     List<Flight> findByOriginIgnoreCase(String origin);
 
     List<Flight> findByDestinationIgnoreCase(String destination);
+
+    List<Flight> findByStatusAndDepartureTimeBefore(FlightStatus flightStatus, LocalDateTime now);
 }

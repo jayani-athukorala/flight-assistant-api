@@ -2,6 +2,7 @@ package se.lexicon.flightbooking_api.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import se.lexicon.flightbooking_api.entity.audit.Auditable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Passenger {
+public class Passenger extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

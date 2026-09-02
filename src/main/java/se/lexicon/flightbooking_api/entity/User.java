@@ -2,6 +2,7 @@ package se.lexicon.flightbooking_api.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import se.lexicon.flightbooking_api.entity.audit.Auditable;
 import se.lexicon.flightbooking_api.entity.enums.UserRole;
 
 @Entity
@@ -11,8 +12,8 @@ import se.lexicon.flightbooking_api.entity.enums.UserRole;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class User {
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+public class User extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

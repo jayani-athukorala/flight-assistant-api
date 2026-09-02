@@ -2,9 +2,11 @@ package se.lexicon.flightbooking_api.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import se.lexicon.flightbooking_api.entity.audit.Auditable;
 import se.lexicon.flightbooking_api.entity.enums.BookingStatus;
 import se.lexicon.flightbooking_api.entity.enums.TripType;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Booking {
+public class Booking extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,13 +43,13 @@ public class Booking {
     @JoinColumn(name = "return_flight_id")
     private Flight returnFlight;
 
-    @Column(nullable = false)
-    private Double totalPrice;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalPrice;
 
     @Builder.Default
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
-            name = "booking_passenger",
+            name = "booking_passengers",
             joinColumns = @JoinColumn(name = "booking_id"),
             inverseJoinColumns = @JoinColumn(name = "passenger_id")
     )
@@ -66,13 +68,27 @@ public class Booking {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column
+    private LocalDateTime cancelledAt;
+
+    @Column
+    private LocalDateTime archivedAt;
+
     public void addPassenger(Passenger passenger){
         passengers.add(passenger);
         passenger.getBookings().add(this);
     }
 
-    public void addSeat(BookingSeat bookingSeat) {
+    public void addSeat(
+            FlightSeat seat,
+            Passenger passenger
+    ) {
+        BookingSeat bookingSeat = BookingSeat.builder()
+                .booking(this)
+                .seat(seat)
+                .passenger(passenger)
+                .build();
+
         seats.add(bookingSeat);
-        bookingSeat.setBooking(this);
     }
 }

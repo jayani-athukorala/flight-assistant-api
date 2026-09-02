@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import se.lexicon.flightbooking_api.dto.flight.FlightDto;
 import se.lexicon.flightbooking_api.service.FlightService;
@@ -25,6 +26,7 @@ public class FlightController {
 
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = "Get all flights",
             description = "Returns all available flights in the system"
@@ -44,6 +46,7 @@ public class FlightController {
 
 
     @GetMapping("/available")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @Operation(
             summary = "Get available flights",
             description = "Returns flights that are currently available for booking"

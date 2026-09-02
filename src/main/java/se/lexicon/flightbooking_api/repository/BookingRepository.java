@@ -6,12 +6,15 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import se.lexicon.flightbooking_api.entity.Booking;
 import se.lexicon.flightbooking_api.entity.enums.BookingStatus;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface BookingRepository extends JpaRepository<Booking, Long> {
+public interface BookingRepository
+        extends JpaRepository<Booking, Long>,
+        JpaSpecificationExecutor<Booking> {
 
     Optional<Booking> findByBookingReference(String bookingReference);
 
@@ -56,4 +59,12 @@ Optional<Booking> findBookingWithSeats(
     );
 
     List<Booking> findByUser_Email(String email);
+
+    List<Booking> findByUser_EmailAndArchivedAtIsNullOrderByBookingDateDesc(
+            String email
+    );
+
+    List<Booking> findByUser_EmailAndArchivedAtIsNotNullOrderByBookingDateDesc(
+            String email
+    );
 }

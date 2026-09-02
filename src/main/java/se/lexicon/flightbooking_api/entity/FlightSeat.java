@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import se.lexicon.flightbooking_api.entity.enums.SeatClass;
 
+import java.math.BigDecimal;
+
 @Entity
 @Getter
 @Setter
@@ -16,18 +18,17 @@ public class FlightSeat {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String seatNumber;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private SeatClass seatClass;
 
-    private Double price;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
 
-    @ManyToOne
-    @JoinColumn(name = "flight_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "flight_id", nullable = false)
     private Flight flight;
-
-    @ManyToOne
-    @JoinColumn(name = "booking_id")
-    private Booking booking;
 }

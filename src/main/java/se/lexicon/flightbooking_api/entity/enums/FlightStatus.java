@@ -1,7 +1,10 @@
 package se.lexicon.flightbooking_api.entity.enums;
 
 public enum FlightStatus {
-    AVAILABLE,
+    SCHEDULED,
+    BOARDING,
+    DEPARTED,
+    COMPLETED,
     CANCELLED,
     FULL
 }
