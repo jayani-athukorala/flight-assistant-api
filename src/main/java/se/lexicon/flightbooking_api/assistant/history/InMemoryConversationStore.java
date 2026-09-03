@@ -119,6 +119,18 @@ public class InMemoryConversationStore {
             UUID conversationId,
             String ownerKey
     ) {
+        if (conversationId == null) {
+            throw new IllegalArgumentException(
+                    "Conversation ID is required"
+            );
+        }
+
+        if (ownerKey == null || ownerKey.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Conversation owner is required"
+            );
+        }
+
         ConversationState state = conversations.get(conversationId);
 
         if (state == null) {
@@ -194,4 +206,5 @@ public class InMemoryConversationStore {
             this.expiresAt = newExpiry;
         }
     }
+
 }
