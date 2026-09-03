@@ -19,8 +19,13 @@ spring:
   flyway:
     enabled: false
 
-  openai:
+openai:
     enabled: false
+
+assistant:
+  history:
+    max-messages: 4
+    ttl: 30m
 
 springdoc:
   api-docs:
