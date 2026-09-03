@@ -23,26 +23,23 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/flights")
+@RequestMapping("/api/bookings")
 @RequiredArgsConstructor
 @Tag(
         name = "Flight Booking",
         description = "APIs for booking and managing flights"
 )
+@SecurityRequirement(name = "bearerAuth")
 public class BookingController {
 
     private final BookingService bookingService;
     private final BookingAdminService bookingAdminService;
 
-    // -------------------------------------------------
-    // CREATE BOOKING
-    // -------------------------------------------------
-
+    @PostMapping
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @Operation(
             summary = "Book a flight",
-            description = "Creates a booking for the authenticated user",
-            security = @SecurityRequirement(name = "bearerAuth")
+            description = "Creates a booking for the authenticated user"
     )
     @ApiResponses({
             @ApiResponse(
@@ -66,7 +63,6 @@ public class BookingController {
                     description = "Flight or seat not found"
             )
     })
-    @PostMapping
     public ResponseEntity<BookingResponseDto> createBooking(
             @Valid @RequestBody BookingRequestDto request
     ) {
@@ -78,16 +74,14 @@ public class BookingController {
                 .body(booking);
     }
 
-    // -------------------------------------------------
-    // MY BOOKINGS
-    // -------------------------------------------------
-
-    @GetMapping("/bookings/my")
-    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @Operation(
             summary = "Get my bookings",
-            description = "Returns bookings belonging to the authenticated user",
-            security = @SecurityRequirement(name = "bearerAuth")
+            description = """
+                    Returns active or archived bookings belonging
+                    to the authenticated user
+                    """
     )
     @ApiResponses({
             @ApiResponse(
@@ -103,33 +97,26 @@ public class BookingController {
                     description = "Access denied"
             )
     })
-    public ResponseEntity<List<BookingResponseDto>> getMyBookings() {
-
-        return ResponseEntity.ok(
-                bookingService.getMyBookings()
-        );
-    }
-
-    @GetMapping("/my")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<List<BookingResponseDto>> getMyBookings(
-            @RequestParam(defaultValue = "false") boolean archived
+            @RequestParam(
+                    name = "archived",
+                    defaultValue = "false"
+            )
+            boolean archived
     ) {
         return ResponseEntity.ok(
                 bookingService.getMyBookings(archived)
         );
     }
 
-    // -------------------------------------------------
-    // CANCEL BOOKING
-    // -------------------------------------------------
-
     @PatchMapping("/{bookingId}/cancel")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @Operation(
             summary = "Cancel my booking",
-            description = "Cancels a booking belonging to the authenticated user",
-            security = @SecurityRequirement(name = "bearerAuth")
+            description = """
+                    Cancels a booking belonging to the
+                    authenticated user
+                    """
     )
     @ApiResponses({
             @ApiResponse(
@@ -142,7 +129,7 @@ public class BookingController {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Booking does not belong to authenticated user"
+                    description = "Booking does not belong to the user"
             ),
             @ApiResponse(
                     responseCode = "404",
@@ -158,6 +145,7 @@ public class BookingController {
 
     @PatchMapping("/{bookingId}/archive")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @Operation(summary = "Archive a cancelled booking")
     public ResponseEntity<Void> archiveBooking(
             @PathVariable Long bookingId
     ) {
@@ -167,6 +155,7 @@ public class BookingController {
 
     @PatchMapping("/{bookingId}/restore")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @Operation(summary = "Restore an archived booking")
     public ResponseEntity<Void> restoreBooking(
             @PathVariable Long bookingId
     ) {
@@ -174,16 +163,31 @@ public class BookingController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/admin/bookings")
+    @GetMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Search all bookings")
     public Page<BookingResponseDto> searchBookings(
-            @RequestParam(required = false) BookingStatus status,
-            @RequestParam(required = false) String email,
-            @RequestParam(required = false) String passportNumber,
-            @RequestParam(required = false) Long flightId,
-            @RequestParam(required = false) LocalDate from,
-            @RequestParam(required = false) LocalDate to,
-            @RequestParam(required = false) Boolean archived,
+            @RequestParam(required = false)
+            BookingStatus status,
+
+            @RequestParam(required = false)
+            String email,
+
+            @RequestParam(required = false)
+            String passportNumber,
+
+            @RequestParam(required = false)
+            Long flightId,
+
+            @RequestParam(required = false)
+            LocalDate from,
+
+            @RequestParam(required = false)
+            LocalDate to,
+
+            @RequestParam(required = false)
+            Boolean archived,
+
             Pageable pageable
     ) {
         return bookingAdminService.searchBookings(

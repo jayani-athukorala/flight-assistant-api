@@ -34,31 +34,62 @@ public class FlightServiceImpl implements FlightService {
     private final CreateFlightMapper createFlightMapper;
 
     @Override
-    public List<FlightDto> getAllFlights(){
-        return flightRepository.findAll()
-                .stream()
-                .map(flightMapper::toDto)
-                .toList();
+@Transactional(readOnly = true)
+public List<FlightDto> getAllFlights() {
+    return flightMapper.toDtoList(
+            flightRepository.findAll()
+    );
+}
+
+@Override
+@Transactional(readOnly = true)
+public List<FlightDto> getAvailableFlights() {
+    return flightMapper.toDtoList(
+            flightRepository.findByStatus(
+                    FlightStatus.SCHEDULED
+            )
+    );
+}
+
+@Override
+@Transactional(readOnly = true)
+public List<FlightDto> getAvailableFlights(
+        Long originId,
+        Long destinationId
+) {
+    if (originId == null || destinationId == null) {
+        throw new IllegalArgumentException(
+                "Origin and destination IDs are required"
+        );
     }
 
-    @Override
-    public List<FlightDto> getAvailableFlights(){
-
-        return flightRepository
-                .findByStatus(FlightStatus.SCHEDULED)
-                .stream()
-                .map(flightMapper::toDto)
-                .toList();
-
+    if (originId.equals(destinationId)) {
+        throw new IllegalArgumentException(
+                "Origin and destination must be different"
+        );
     }
 
-    @Override
-    public FlightDto getFlightById(Long id){
-        Flight flight = flightRepository.findById(id)
-                        .orElseThrow(() -> new FlightNotFoundException(id));
-        return flightMapper.toDto(flight);
+    return flightMapper.toDtoList(
+            flightRepository
+                    .findByStatusAndOrigin_IdAndDestination_Id(
+                            FlightStatus.SCHEDULED,
+                            originId,
+                            destinationId
+                    )
+    );
+}
 
-    }
+@Override
+@Transactional(readOnly = true)
+public FlightDto getFlightById(Long id) {
+    Flight flight = flightRepository.findById(id)
+            .orElseThrow(
+                    () -> new FlightNotFoundException(id)
+            );
+
+    return flightMapper.toDto(flight);
+}
+
 
     @Transactional
     public FlightDto createFlight(CreateFlightDto request) {

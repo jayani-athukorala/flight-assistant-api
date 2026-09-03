@@ -44,10 +44,14 @@ public class SecurityConfig {
             HttpSecurity http
     ) throws Exception {
 
-        http
+        return http
                 .csrf(csrf -> csrf.disable())
 
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors ->
+                        cors.configurationSource(
+                                corsConfigurationSource()
+                        )
+                )
 
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
@@ -57,43 +61,45 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // CORS preflight
-                        .requestMatchers(HttpMethod.OPTIONS, "/**")
-                        .permitAll()
+                        // Browser CORS preflight requests
+                        .requestMatchers(
+                                HttpMethod.OPTIONS,
+                                "/**"
+                        ).permitAll()
 
-                        // Authentication
+                        // Authentication endpoints
                         .requestMatchers(
                                 "/api/auth/**"
                         ).permitAll()
 
-                        // Swagger
+                        // Swagger/OpenAPI
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**"
                         ).permitAll()
 
-                        // Public flight browsing
+                        // Public airport searches
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/api/flights",
-                                "/api/flights/available"
+                                "/api/airports/**"
                         ).permitAll()
 
-                        // Protected booking operations
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/flights/*/book"
-                        ).authenticated()
-
+                        // Public available-flight searches
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/api/flights/bookings/my"
+                                "/api/flights/available",
+                                "/api/flights/available/**"
+                        ).permitAll()
+
+                        // Authenticated booking operations
+                        .requestMatchers(
+                                "/api/bookings/**"
                         ).authenticated()
 
+                        // Other flight management operations
                         .requestMatchers(
-                                HttpMethod.DELETE,
-                                "/api/flights/*/cancel"
+                                "/api/flights/**"
                         ).authenticated()
 
                         .anyRequest().authenticated()
@@ -102,14 +108,13 @@ public class SecurityConfig {
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
-                );
+                )
 
-        return http.build();
+                .build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
@@ -122,6 +127,7 @@ public class SecurityConfig {
                         "GET",
                         "POST",
                         "PUT",
+                        "PATCH",
                         "DELETE",
                         "OPTIONS"
                 )
@@ -130,9 +136,17 @@ public class SecurityConfig {
         configuration.setAllowedHeaders(
                 List.of(
                         "Authorization",
-                        "Content-Type"
+                        "Content-Type",
+                        "Accept"
                 )
         );
+
+        configuration.setExposedHeaders(
+                List.of("Authorization")
+        );
+
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();

@@ -14,5 +14,6 @@ public record FlightDto(
         AirportResponseDto destination,
         LocalDateTime departureTime,
         LocalDateTime arrivalTime,
-        FlightStatus status
+        FlightStatus status,
+        BigDecimal startingPrice
 ) {}

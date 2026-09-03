@@ -10,7 +10,7 @@ import se.lexicon.flightbooking_api.service.AirportService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/airports")
+@RequestMapping("/api/airports")
 @RequiredArgsConstructor
 public class AirportController {
 
@@ -30,4 +30,3 @@ public class AirportController {
         );
     }
 }
-

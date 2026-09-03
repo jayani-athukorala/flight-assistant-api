@@ -1,26 +1,67 @@
 package se.lexicon.flightbooking_api.repository;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import se.lexicon.flightbooking_api.entity.Airport;
 import se.lexicon.flightbooking_api.entity.Flight;
 import se.lexicon.flightbooking_api.entity.enums.FlightStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
-public interface FlightRepository extends JpaRepository<Flight, Long> {
+public interface FlightRepository
+        extends JpaRepository<Flight, Long> {
 
-    Optional<Flight> findByFlightNumber(String flightNumber);
+    List<Flight> findByFlightNumber(String flightNumber);
 
+    @EntityGraph(attributePaths = {
+            "origin",
+            "destination",
+            "seats"
+    })
     List<Flight> findByStatus(FlightStatus status);
 
-    List<Flight> findByOriginAndDestination(String origin, String destination);
+    @EntityGraph(attributePaths = {
+            "origin",
+            "destination",
+            "seats"
+    })
+    List<Flight> findByStatusAndOrigin_IdAndDestination_Id(
+            FlightStatus status,
+            Long originId,
+            Long destinationId
+    );
 
-    List<Flight> findByOriginIgnoreCase(String origin);
+    List<Flight> findByOriginAndDestination(
+            Airport origin,
+            Airport destination
+    );
 
-    List<Flight> findByDestinationIgnoreCase(String destination);
+    List<Flight> findByOrigin_CodeIgnoreCase(
+            String originCode
+    );
 
-    List<Flight> findByStatusAndDepartureTimeBefore(FlightStatus flightStatus, LocalDateTime now);
+    List<Flight> findByDestination_CodeIgnoreCase(
+            String destinationCode
+    );
+
+    @EntityGraph(attributePaths = {
+            "origin",
+            "destination",
+            "seats"
+    })
+    List<Flight>
+    findByStatusAndOrigin_CodeIgnoreCaseAndDestination_CodeIgnoreCase(
+            FlightStatus status,
+            String originCode,
+            String destinationCode
+    );
+
+    List<Flight> findByStatusAndDepartureTimeBefore(
+            FlightStatus status,
+            LocalDateTime departureTime
+    );
 }

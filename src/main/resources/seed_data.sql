@@ -18,7 +18,7 @@
 -- AIRPORTS
 -- ============================================================
 
-INSERT INTO airports (code, name, city, country)
+INSERT IGNORE INTO airports (code, name, city, country)
 VALUES
     ('ARN', 'Stockholm Arlanda Airport', 'Stockholm', 'Sweden'),
     ('GOT', 'Göteborg Landvetter Airport', 'Gothenburg', 'Sweden'),
@@ -45,7 +45,7 @@ VALUES
 -- Flight numbers intentionally repeat on different dates.
 -- ============================================================
 
-INSERT INTO flight
+INSERT IGNORE INTO flight
 (
     flight_number,
     airline,
@@ -116,7 +116,7 @@ FROM
 
 -- Additional routes for broader airport-search demonstrations.
 
-INSERT INTO flight
+INSERT IGNORE INTO flight
 (
     flight_number,
     airline,
@@ -176,7 +176,7 @@ FROM
 -- Prices come from the database and are trusted by booking logic.
 -- ============================================================
 
-INSERT INTO flight_seat
+INSERT IGNORE INTO flight_seat
 (
     seat_number,
     seat_class,
@@ -223,19 +223,26 @@ FROM flight
 -- PASSENGERS
 -- ============================================================
 
-INSERT INTO passenger
+INSERT IGNORE INTO passenger
 (
     first_name,
     last_name,
     passport_number,
-    email
+    email,
+    created_at,
+    updated_at
 )
 VALUES
-    ('John', 'Doe', 'PASS10001', 'john@test.com'),
-    ('Jane', 'Doe', 'PASS10002', 'jane.doe@test.com'),
-    ('Emma', 'Smith', 'PASS20001', 'jane@test.com'),
-    ('Oliver', 'Smith', 'PASS20002', 'oliver@test.com'),
-    ('Mia', 'Andersson', 'PASS30001', 'mia@test.com');
+    ('John', 'Doe', 'PASS10001', 'john@test.com',
+     '2026-08-29 09:00:00', '2026-08-29 09:00:00'),
+    ('Jane', 'Doe', 'PASS10002', 'jane.doe@test.com',
+     '2026-08-29 09:05:00', '2026-08-29 09:05:00'),
+    ('Emma', 'Smith', 'PASS20001', 'jane@test.com',
+     '2026-08-29 09:10:00', '2026-08-29 09:10:00'),
+    ('Oliver', 'Smith', 'PASS20002', 'oliver@test.com',
+     '2026-08-29 09:15:00', '2026-08-29 09:15:00'),
+    ('Mia', 'Andersson', 'PASS30001', 'mia@test.com',
+     '2026-08-29 09:20:00', '2026-08-29 09:20:00');
 
 
 -- ============================================================
@@ -247,10 +254,12 @@ VALUES
 -- FB-SEED004: cancelled and archived
 -- ============================================================
 
-INSERT INTO booking
+INSERT IGNORE INTO booking
 (
     booking_reference,
     booking_date,
+    created_at,
+    updated_at,
     cancelled_at,
     archived_at,
     status,
@@ -262,6 +271,8 @@ INSERT INTO booking
 )
 SELECT
     'FB-SEED001',
+    '2026-09-02 08:00:00',
+    '2026-09-02 08:00:00',
     '2026-09-02 08:00:00',
     NULL,
     NULL,
@@ -284,10 +295,12 @@ WHERE outbound.flight_number = 'SK101'
   AND outbound.departure_time = '2026-09-04 07:30:00';
 
 
-INSERT INTO booking
+INSERT IGNORE INTO booking
 (
     booking_reference,
     booking_date,
+    created_at,
+    updated_at,
     cancelled_at,
     archived_at,
     status,
@@ -299,6 +312,8 @@ INSERT INTO booking
 )
 SELECT
     'FB-SEED002',
+    '2026-09-02 09:15:00',
+    '2026-09-02 09:15:00',
     '2026-09-02 09:15:00',
     NULL,
     NULL,
@@ -324,10 +339,12 @@ WHERE outbound.flight_number = 'SK201'
   AND outbound.departure_time = '2026-09-08 08:15:00';
 
 
-INSERT INTO booking
+INSERT IGNORE INTO booking
 (
     booking_reference,
     booking_date,
+    created_at,
+    updated_at,
     cancelled_at,
     archived_at,
     status,
@@ -340,6 +357,8 @@ INSERT INTO booking
 SELECT
     'FB-SEED003',
     '2026-09-01 14:00:00',
+    '2026-09-01 14:00:00',
+    '2026-09-02 10:00:00',
     '2026-09-02 10:00:00',
     NULL,
     'CANCELLED',
@@ -361,10 +380,12 @@ WHERE outbound.flight_number = 'LH401'
   AND outbound.departure_time = '2026-09-10 10:20:00';
 
 
-INSERT INTO booking
+INSERT IGNORE INTO booking
 (
     booking_reference,
     booking_date,
+    created_at,
+    updated_at,
     cancelled_at,
     archived_at,
     status,
@@ -377,6 +398,8 @@ INSERT INTO booking
 SELECT
     'FB-SEED004',
     '2026-08-30 12:00:00',
+    '2026-08-30 12:00:00',
+    '2026-09-01 09:00:00',
     '2026-08-31 09:00:00',
     '2026-09-01 09:00:00',
     'CANCELLED',
@@ -402,26 +425,26 @@ WHERE outbound.flight_number = 'KL301'
 -- BOOKING <-> PASSENGERS
 -- ============================================================
 
-INSERT INTO booking_passengers (booking_id, passenger_id)
+INSERT IGNORE INTO booking_passengers (booking_id, passenger_id)
 SELECT booking.id, passenger.id
 FROM booking
          JOIN passenger ON passenger.passport_number = 'PASS10001'
 WHERE booking.booking_reference = 'FB-SEED001';
 
-INSERT INTO booking_passengers (booking_id, passenger_id)
+INSERT IGNORE INTO booking_passengers (booking_id, passenger_id)
 SELECT booking.id, passenger.id
 FROM booking
          JOIN passenger
               ON passenger.passport_number IN ('PASS20001', 'PASS20002')
 WHERE booking.booking_reference = 'FB-SEED002';
 
-INSERT INTO booking_passengers (booking_id, passenger_id)
+INSERT IGNORE INTO booking_passengers (booking_id, passenger_id)
 SELECT booking.id, passenger.id
 FROM booking
          JOIN passenger ON passenger.passport_number = 'PASS10002'
 WHERE booking.booking_reference = 'FB-SEED003';
 
-INSERT INTO booking_passengers (booking_id, passenger_id)
+INSERT IGNORE INTO booking_passengers (booking_id, passenger_id)
 SELECT booking.id, passenger.id
 FROM booking
          JOIN passenger ON passenger.passport_number = 'PASS30001'
@@ -437,8 +460,10 @@ WHERE booking.booking_reference = 'FB-SEED004';
 -- ============================================================
 
 -- Confirmed one-way: John -> 10A
-INSERT INTO booking_seat (booking_id, seat_id, passenger_id)
-SELECT booking.id, flight_seat.id, passenger.id
+INSERT IGNORE INTO booking_seat
+    (booking_id, seat_id, passenger_id, created_at, updated_at)
+SELECT booking.id, flight_seat.id, passenger.id,
+       booking.created_at, booking.updated_at
 FROM booking
          JOIN passenger ON passenger.passport_number = 'PASS10001'
          JOIN flight_seat
@@ -447,8 +472,10 @@ FROM booking
 WHERE booking.booking_reference = 'FB-SEED001';
 
 -- Confirmed round trip: Emma -> 2A outbound and return
-INSERT INTO booking_seat (booking_id, seat_id, passenger_id)
-SELECT booking.id, flight_seat.id, passenger.id
+INSERT IGNORE INTO booking_seat
+    (booking_id, seat_id, passenger_id, created_at, updated_at)
+SELECT booking.id, flight_seat.id, passenger.id,
+       booking.created_at, booking.updated_at
 FROM booking
          JOIN passenger ON passenger.passport_number = 'PASS20001'
          JOIN flight_seat
@@ -460,8 +487,10 @@ FROM booking
 WHERE booking.booking_reference = 'FB-SEED002';
 
 -- Confirmed round trip: Oliver -> 2B outbound and return
-INSERT INTO booking_seat (booking_id, seat_id, passenger_id)
-SELECT booking.id, flight_seat.id, passenger.id
+INSERT IGNORE INTO booking_seat
+    (booking_id, seat_id, passenger_id, created_at, updated_at)
+SELECT booking.id, flight_seat.id, passenger.id,
+       booking.created_at, booking.updated_at
 FROM booking
          JOIN passenger ON passenger.passport_number = 'PASS20002'
          JOIN flight_seat
@@ -473,8 +502,10 @@ FROM booking
 WHERE booking.booking_reference = 'FB-SEED002';
 
 -- Cancelled booking history: Jane -> 2A
-INSERT INTO booking_seat (booking_id, seat_id, passenger_id)
-SELECT booking.id, flight_seat.id, passenger.id
+INSERT IGNORE INTO booking_seat
+    (booking_id, seat_id, passenger_id, created_at, updated_at)
+SELECT booking.id, flight_seat.id, passenger.id,
+       booking.created_at, booking.updated_at
 FROM booking
          JOIN passenger ON passenger.passport_number = 'PASS10002'
          JOIN flight_seat
@@ -483,8 +514,10 @@ FROM booking
 WHERE booking.booking_reference = 'FB-SEED003';
 
 -- Archived booking history: Mia -> 12A
-INSERT INTO booking_seat (booking_id, seat_id, passenger_id)
-SELECT booking.id, flight_seat.id, passenger.id
+INSERT IGNORE INTO booking_seat
+    (booking_id, seat_id, passenger_id, created_at, updated_at)
+SELECT booking.id, flight_seat.id, passenger.id,
+       booking.created_at, booking.updated_at
 FROM booking
          JOIN passenger ON passenger.passport_number = 'PASS30001'
          JOIN flight_seat

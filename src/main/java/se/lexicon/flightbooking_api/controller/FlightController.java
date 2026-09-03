@@ -45,8 +45,25 @@ public class FlightController {
     }
 
 
+//     @GetMapping("/available")
+//     @Operation(
+//             summary = "Get available flights",
+//             description = "Returns flights that are currently available for booking"
+//     )
+//     @ApiResponses(value = {
+//             @ApiResponse(
+//                     responseCode = "200",
+//                     description = "Available flights retrieved successfully"
+//             )
+//     })
+//     public ResponseEntity<List<FlightDto>> getAvailableFlights() {
+
+//         return ResponseEntity.ok(
+//                 flightService.getAvailableFlights()
+//         );
+//     }
+
     @GetMapping("/available")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @Operation(
             summary = "Get available flights",
             description = "Returns flights that are currently available for booking"
@@ -57,12 +74,17 @@ public class FlightController {
                     description = "Available flights retrieved successfully"
             )
     })
-    public ResponseEntity<List<FlightDto>> getAvailableFlights() {
-
-        return ResponseEntity.ok(
-                flightService.getAvailableFlights()
-        );
-    }
+public ResponseEntity<List<FlightDto>> getAvailableFlights(
+        @RequestParam Long originId,
+        @RequestParam Long destinationId
+) {
+    return ResponseEntity.ok(
+            flightService.getAvailableFlights(
+                    originId,
+                    destinationId
+            )
+    );
+}
 
 
     @GetMapping("/{id}")
