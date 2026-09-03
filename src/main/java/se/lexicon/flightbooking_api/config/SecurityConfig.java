@@ -2,6 +2,7 @@ package se.lexicon.flightbooking_api.config;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -27,6 +28,9 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Value("${app.cors.allowed-origin:http://localhost:5173}")
+    private String allowedOrigin;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -117,7 +121,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/assistant/chat"
-                        ).permitAll()
+                        ).authenticated()
 
                         // Booking operations require authentication
                         .requestMatchers(
@@ -147,7 +151,7 @@ public class SecurityConfig {
                 new CorsConfiguration();
 
         configuration.setAllowedOrigins(
-                List.of("http://localhost:5173")
+                List.of(allowedOrigin)
         );
 
         configuration.setAllowedMethods(

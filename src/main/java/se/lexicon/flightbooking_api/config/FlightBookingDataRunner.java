@@ -11,7 +11,7 @@ import se.lexicon.flightbooking_api.entity.enums.UserRole;
 import se.lexicon.flightbooking_api.repository.UserRepository;
 
 @Component
-@Profile("!test")
+@Profile("dev")
 @RequiredArgsConstructor
 public class FlightBookingDataRunner implements CommandLineRunner {
 

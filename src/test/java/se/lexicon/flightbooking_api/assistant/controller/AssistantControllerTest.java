@@ -5,12 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.blankOrNullString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,33 +23,25 @@ class AssistantControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @WithMockUser(username = "user@example.com")
     @Test
     void chatCreatesConversationForFirstMessage() throws Exception {
-
-        mockMvc.perform(
-                post("/api/assistant/chat")
+        mockMvc.perform(post("/api/assistant/chat")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                            {
-                                "conversationId": null,
-                                "message": "Find flights to Paris"
-                            }
-                        """))
+                        {
+                          "conversationId": null,
+                          "message": "Find flights to Paris"
+                        }
+                    """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.conversationId")
-                        .value(not(blankOrNullString())
-                        )
-                )
-                .andExpect(jsonPath("$.type")
-                        .value("TEXT")
-                )
-                .andExpect(jsonPath("$.message")
-                        .value(
-                                "Assistant integration is ready. "
-                                                + "You said: "
-                                                + "Find flights to Paris"
-                        )
-                );
+                .andExpect(jsonPath("$.conversationId").isNotEmpty())
+                .andExpect(jsonPath("$.type").value("TEXT"))
+                .andExpect(jsonPath("$.flights").isArray())
+                .andExpect(jsonPath("$.availableSeats").isArray())
+                .andExpect(jsonPath("$.bookings").isArray())
+                .andExpect(jsonPath("$.requiresConfirmation").value(false))
+                .andExpect(jsonPath("$.pendingAction").doesNotExist());
     }
 
     @Test
@@ -90,4 +81,17 @@ class AssistantControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").exists());
     }
+
+    @Test
+    void chatRejectsUnauthenticatedRequest() throws Exception {
+        mockMvc.perform(post("/api/assistant/chat")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                        {
+                          "message": "Show available flights"
+                        }
+                    """))
+                .andExpect(status().isUnauthorized());
+    }
+
 }

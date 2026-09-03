@@ -1,4 +1,14 @@
 package se.lexicon.flightbooking_api.assistant.dto;
 
-public class PendingAssistantAction {
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
+
+public record PendingAssistantAction(
+        UUID actionId,
+        PendingActionType type,
+        String description,
+        Map<String, Object> parameters,
+        Instant expiresAt
+) {
 }

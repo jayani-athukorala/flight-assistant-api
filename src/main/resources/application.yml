@@ -3,28 +3,32 @@ spring:
     name: flight-booking-api
 
   datasource:
-    url: "${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/flight_booking_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}"
-    username: "${SPRING_DATASOURCE_USERNAME:root}"
-    password: "${SPRING_DATASOURCE_PASSWORD:root}"
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
 
   jpa:
     open-in-view: false
+    hibernate:
+      ddl-auto: ${HIBERNATE_DDL_AUTO:update}
     properties:
       hibernate:
         jdbc:
           time_zone: UTC
 
+  sql:
+    init:
+      mode: never
+
   jackson:
     time-zone: UTC
 
 server:
-  port: "${SERVER_PORT:8080}"
+  port: ${PORT:${SERVER_PORT:8080}}
 
 app:
   cors:
-    allowed-origins:
-      - "http://localhost:5173"
-      - "http://localhost:3000"
+    allowed-origin: ${FRONTEND_URL:http://localhost:5173}
     allowed-methods:
       - GET
       - POST
@@ -37,8 +41,8 @@ app:
     allow-credentials: true
 
 jwt:
-  secret: "${JWT_SECRET}"
-  expiration: "${JWT_EXPIRATION:86400000}"
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
 
 springdoc:
   api-docs:

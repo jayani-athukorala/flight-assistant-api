@@ -1,40 +1,55 @@
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: flight-booking-mysql
+  postgres:
+    image: postgres:16-alpine
+    container_name: flight-booking-postgres
     restart: unless-stopped
+
     environment:
-      MYSQL_DATABASE: "${MYSQL_DATABASE}"
-      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      POSTGRES_DB: flight_booking_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
     ports:
-      - "3306:3306"
+      - "5432:5432"
+
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
+
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U postgres -d flight_booking_db"
+        ]
       interval: 5s
       timeout: 5s
       retries: 20
-      start_period: 20s
+      start_period: 10s
 
   api:
     build:
       context: .
       dockerfile: Dockerfile
+
     container_name: flight-booking-api
     restart: unless-stopped
+
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
+
     ports:
       - "8080:8080"
+
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
-      JWT_SECRET: "${JWT_SECRET}"
-      JWT_EXPIRATION: "${JWT_EXPIRATION:-86400000}"
+
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/flight_booking_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
 
 volumes:
-  mysql_data:
+  postgres_data:
