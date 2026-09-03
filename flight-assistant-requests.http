@@ -1,0 +1,79 @@
+@baseUrl = http://localhost:8080
+
+### First public assistant message
+POST {{baseUrl}}/api/assistant/chat
+Content-Type: application/json
+Accept: application/json
+
+{
+  "conversationId": null,
+  "message": "Hello. What can you help me with?"
+}
+
+> {%
+    client.test("Assistant responds successfully", function () {
+        client.assert(
+            response.status === 200,
+            "Expected HTTP 200"
+        );
+
+        client.assert(
+            response.body.conversationId,
+            "Conversation ID is missing"
+        );
+
+        client.assert(
+            response.body.message,
+            "Assistant message is missing"
+        );
+    });
+
+    client.global.set(
+        "assistantConversationId",
+        response.body.conversationId
+    );
+%}
+
+### Continue the same conversation
+POST {{baseUrl}}/api/assistant/chat
+Content-Type: application/json
+Accept: application/json
+
+{
+  "conversationId": "{{assistantConversationId}}",
+  "message": "My departure city is Gothenburg. Which city did I mention?"
+}
+
+> {%
+    client.test("Conversation context is preserved", function () {
+        client.assert(
+            response.status === 200,
+            "Expected HTTP 200"
+        );
+
+        client.assert(
+            response.body.conversationId ===
+            client.global.get("assistantConversationId"),
+            "Conversation ID changed"
+        );
+    });
+%}
+
+### Validation error
+POST {{baseUrl}}/api/assistant/chat
+Content-Type: application/json
+Accept: application/json
+
+{
+  "conversationId": null,
+  "message": ""
+}
+
+> {%
+    client.test("Empty message is rejected", function () {
+        client.assert(
+            response.status === 400,
+            "Expected HTTP 400"
+        );
+    });
+%}

@@ -27,6 +27,7 @@ services:
       start_period: 10s
 
   api:
+
     build:
       context: .
       dockerfile: Dockerfile
@@ -42,6 +43,13 @@ services:
       - "8080:8080"
 
     environment:
+
+      OPENAI_ENABLED: ${OPENAI_ENABLED:-false}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
+      OPENAI_TIMEOUT: ${OPENAI_TIMEOUT:-30s}
+      OPENAI_MAX_RETRIES: ${OPENAI_MAX_RETRIES:-2}
+
       SPRING_PROFILES_ACTIVE: dev
 
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/flight_booking_db
