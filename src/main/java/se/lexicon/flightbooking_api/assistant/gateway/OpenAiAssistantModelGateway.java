@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import se.lexicon.flightbooking_api.assistant.config.OpenAiProperties;
+import se.lexicon.flightbooking_api.assistant.exception.AssistantModelException;
 import se.lexicon.flightbooking_api.assistant.history.ChatMessage;
 import se.lexicon.flightbooking_api.assistant.history.ChatRole;
 import se.lexicon.flightbooking_api.assistant.prompt.AssistantSystemPrompt;
@@ -31,6 +32,19 @@ public class OpenAiAssistantModelGateway
 
     @Override
     public String generateReply(List<ChatMessage> conversation) {
+        try {
+            return requestReply(conversation);
+        } catch (AssistantModelException exception) {
+            throw exception;
+        } catch (RuntimeException exception) {
+            throw new AssistantModelException(
+                    "OpenAI request failed",
+                    exception
+            );
+        }
+    }
+
+    private String requestReply(List<ChatMessage> conversation) {
         List<ResponseInputItem> inputItems = conversation.stream()
                 .filter(message -> message.role() != ChatRole.TOOL)
                 .map(this::toInputItem)
@@ -55,7 +69,7 @@ public class OpenAiAssistantModelGateway
                 .collect(Collectors.joining("\n"));
 
         if (reply.isBlank()) {
-            throw new IllegalStateException(
+            throw new AssistantModelException(
                     "OpenAI returned no assistant text"
             );
         }
