@@ -1,17 +1,29 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:flight-booking-test;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:mem:flight_booking_test;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;NON_KEYWORDS=USER
     driver-class-name: org.h2.Driver
     username: sa
-    password:
+    password: ""
+
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create-drop
     show-sql: false
+    open-in-view: false
+
+  sql:
+    init:
+      mode: never
+
+  flyway:
+    enabled: false
 
 springdoc:
   api-docs:
     enabled: false
   swagger-ui:
     enabled: false
+
+JWT_SECRET: "K+rzovPfupsdmaqeNEF921GSissFQCOPPAkdTSNGXbEO/d+hcdQRS4Oxomj1MExmOZ0I/C17Si9KeJ4PzCaqaQ=="
+JWT_EXPIRATION: 86400000

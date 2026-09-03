@@ -1,5 +1,6 @@
 package se.lexicon.flightbooking_api.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -59,9 +60,30 @@ public class SecurityConfig {
                         )
                 )
 
+                /*
+                 * 401: no authentication was provided.
+                 * 403: authenticated user lacks permission.
+                 */
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(
+                                (request, response, exception) ->
+                                        response.sendError(
+                                                HttpServletResponse.SC_UNAUTHORIZED,
+                                                "Authentication required"
+                                        )
+                        )
+                        .accessDeniedHandler(
+                                (request, response, exception) ->
+                                        response.sendError(
+                                                HttpServletResponse.SC_FORBIDDEN,
+                                                "Access denied"
+                                        )
+                        )
+                )
+
                 .authorizeHttpRequests(auth -> auth
 
-                        // Browser CORS preflight requests
+                        // Allow CORS preflight requests
                         .requestMatchers(
                                 HttpMethod.OPTIONS,
                                 "/**"
@@ -79,29 +101,30 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
 
-                        // Public airport searches
+                        // Public airport endpoints
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/airports/**"
                         ).permitAll()
 
-                        // Public available-flight searches
+                        // Public available-flight searching
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/flights/available",
                                 "/api/flights/available/**"
                         ).permitAll()
 
-                        // Authenticated booking operations
+                        // Booking operations require authentication
                         .requestMatchers(
                                 "/api/bookings/**"
                         ).authenticated()
 
-                        // Other flight management operations
+                        // Other flight operations require authentication
                         .requestMatchers(
                                 "/api/flights/**"
                         ).authenticated()
 
+                        // Everything else requires authentication
                         .anyRequest().authenticated()
                 )
 
