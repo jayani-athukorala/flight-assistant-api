@@ -114,6 +114,11 @@ public class SecurityConfig {
                                 "/api/flights/available/**"
                         ).permitAll()
 
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/assistant/chat"
+                        ).permitAll()
+
                         // Booking operations require authentication
                         .requestMatchers(
                                 "/api/bookings/**"
