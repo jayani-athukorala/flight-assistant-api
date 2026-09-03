@@ -121,7 +121,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/assistant/chat"
-                        ).authenticated()
+                        ).permitAll()
 
                         // Booking operations require authentication
                         .requestMatchers(

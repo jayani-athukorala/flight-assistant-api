@@ -19,6 +19,9 @@ spring:
   flyway:
     enabled: false
 
+  openai:
+    enabled: false
+
 springdoc:
   api-docs:
     enabled: false
