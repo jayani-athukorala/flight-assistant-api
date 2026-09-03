@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import se.lexicon.flightbooking_api.assistant.dto.AssistantChatRequest;
 import se.lexicon.flightbooking_api.assistant.dto.AssistantChatResponse;
 import se.lexicon.flightbooking_api.assistant.dto.AssistantResponseType;
+import se.lexicon.flightbooking_api.assistant.gateway.AssistantModelGateway;
 import se.lexicon.flightbooking_api.assistant.history.ChatMessage;
 import se.lexicon.flightbooking_api.assistant.history.ChatRole;
 import se.lexicon.flightbooking_api.assistant.history.InMemoryConversationStore;
@@ -17,6 +18,7 @@ import java.util.UUID;
 public class AssistantServiceImpl implements AssistantService {
 
     private final InMemoryConversationStore conversationStore;
+    private final AssistantModelGateway modelGateway;
 
     @Override
     public AssistantChatResponse chat(
@@ -36,9 +38,14 @@ public class AssistantServiceImpl implements AssistantService {
                 )
         );
 
+        List<ChatMessage> conversation =
+                conversationStore.getMessages(
+                        conversationId,
+                        ownerKey
+                );
+
         String assistantMessage =
-                "Assistant integration is ready. You said: "
-                        + request.message();
+                modelGateway.generateReply(conversation);
 
         conversationStore.append(
                 conversationId,

@@ -5,7 +5,7 @@ public final class AssistantSystemPrompt {
     private AssistantSystemPrompt() {
     }
 
-    public static final String CONTENT = """
+    public static final String PROMPT = """
             You are the flight reservation assistant for the Flight Booking application.
 
             Your responsibilities are limited to:
