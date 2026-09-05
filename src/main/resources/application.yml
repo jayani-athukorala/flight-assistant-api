@@ -47,17 +47,7 @@ server:
 
 app:
   cors:
-    allowed-origin: ${FRONTEND_URL:http://localhost:5173}
-    allowed-methods:
-      - GET
-      - POST
-      - PUT
-      - PATCH
-      - DELETE
-      - OPTIONS
-    allowed-headers:
-      - "*"
-    allow-credentials: true
+    allowed-origins: ${FRONTEND_URLS:http://localhost:5173}
 
 jwt:
   secret: ${JWT_SECRET}

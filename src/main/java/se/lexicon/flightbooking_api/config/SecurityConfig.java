@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,7 +20,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import se.lexicon.flightbooking_api.security.JwtAuthenticationFilter;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -29,22 +27,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private static final String[] PUBLIC_DOCUMENTATION_ENDPOINTS = {
-            "/swagger-ui/**",
-            "/swagger-ui.html",
-            "/v3/api-docs/**"
-    };
-
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    /**
-     * Comma-separated list of allowed frontend origins.
-     *
-     * Example:
-     * app.cors.allowed-origins=http://localhost:5173,https://flight-assistant-ui.onrender.com
-     */
     @Value("${app.cors.allowed-origins:http://localhost:5173}")
-    private String allowedOriginsProperty;
+    private List<String> allowedOrigins;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -53,124 +39,137 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration authenticationConfiguration
+            AuthenticationConfiguration configuration
     ) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
+        return configuration.getAuthenticationManager();
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
-            throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http
+    ) throws Exception {
 
-        http
+        return http
                 .csrf(csrf -> csrf.disable())
-                .cors(Customizer.withDefaults())
 
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .cors(cors ->
+                        cors.configurationSource(corsConfigurationSource())
+                )
+
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
                 )
 
                 .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint((request, response, exception) ->
-                                response.sendError(
-                                        HttpServletResponse.SC_UNAUTHORIZED,
-                                        "Authentication required"
-                                )
+                        .authenticationEntryPoint(
+                                (request, response, exception) ->
+                                        response.sendError(
+                                                HttpServletResponse.SC_UNAUTHORIZED,
+                                                "Authentication required"
+                                        )
                         )
-                        .accessDeniedHandler((request, response, exception) ->
-                                response.sendError(
-                                        HttpServletResponse.SC_FORBIDDEN,
-                                        "Access denied"
-                                )
+                        .accessDeniedHandler(
+                                (request, response, exception) ->
+                                        response.sendError(
+                                                HttpServletResponse.SC_FORBIDDEN,
+                                                "Access denied"
+                                        )
                         )
                 )
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // CORS preflight requests
-                        .requestMatchers(HttpMethod.OPTIONS, "/**")
-                        .permitAll()
+                        // Allow CORS preflight requests
+                        .requestMatchers(
+                                HttpMethod.OPTIONS,
+                                "/**"
+                        ).permitAll()
 
-                        // Authentication
-                        .requestMatchers("/api/auth/**")
-                        .permitAll()
+                        // Authentication endpoints
+                        .requestMatchers(
+                                "/api/auth/**"
+                        ).permitAll()
 
                         // Swagger and OpenAPI
-                        .requestMatchers(PUBLIC_DOCUMENTATION_ENDPOINTS)
-                        .permitAll()
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
+                        ).permitAll()
 
-                        // Public airport search
-                        .requestMatchers(HttpMethod.GET, "/api/airports/**")
-                        .permitAll()
-
-                        // Public flight search and seat availability
+                        // Public airport endpoints
                         .requestMatchers(
                                 HttpMethod.GET,
+                                "/api/airports/**"
+                        ).permitAll()
+
+                        // Public flight and seat endpoints
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/flights",
                                 "/api/flights/available",
                                 "/api/flights/available/**",
                                 "/api/flights/*/seats",
                                 "/api/flights/*/seats/class"
-                        )
-                        .permitAll()
+                        ).permitAll()
 
-                        // Public assistant endpoint
+                        // Public assistant messages
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/assistant/chat"
-                        )
-                        .permitAll()
+                        ).permitAll()
 
-                        // Public conversation deletion, if intentional
+                        // Assistant actions require authentication
                         .requestMatchers(
-                                HttpMethod.DELETE,
-                                "/api/assistant/conversations/*"
-                        )
-                        .permitAll()
+                                "/api/assistant/conversations/**"
+                        ).authenticated()
 
-                        // Protected assistant operations
+                        // Booking operations require authentication
                         .requestMatchers(
-                                "/api/assistant/conversations/*/actions/**"
-                        )
-                        .authenticated()
+                                "/api/bookings/**"
+                        ).authenticated()
 
-                        // Protected booking and flight management
+                        // All remaining flight operations require authentication
                         .requestMatchers(
-                                "/api/bookings/**",
                                 "/api/flights/**"
-                        )
-                        .authenticated()
+                        ).authenticated()
 
-                        .anyRequest()
-                        .authenticated()
+                        // Everything else requires authentication
+                        .anyRequest().authenticated()
                 )
 
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
-                );
+                )
 
-        return http.build();
+                .build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
+        CorsConfiguration configuration =
+                new CorsConfiguration();
 
-        configuration.setAllowedOrigins(getAllowedOrigins());
+        configuration.setAllowedOrigins(allowedOrigins);
 
         configuration.setAllowedMethods(List.of(
-                HttpMethod.GET.name(),
-                HttpMethod.POST.name(),
-                HttpMethod.PUT.name(),
-                HttpMethod.PATCH.name(),
-                HttpMethod.DELETE.name(),
-                HttpMethod.OPTIONS.name()
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
         ));
 
         configuration.setAllowedHeaders(List.of(
                 "Authorization",
                 "Content-Type",
-                "Accept"
+                "Accept",
+                "Origin",
+                "X-Requested-With"
         ));
 
         configuration.setExposedHeaders(List.of(
@@ -183,16 +182,11 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration(
+                "/**",
+                configuration
+        );
 
         return source;
-    }
-
-    private List<String> getAllowedOrigins() {
-        return Arrays.stream(allowedOriginsProperty.split(","))
-                .map(String::trim)
-                .filter(origin -> !origin.isBlank())
-                .distinct()
-                .toList();
     }
 }
