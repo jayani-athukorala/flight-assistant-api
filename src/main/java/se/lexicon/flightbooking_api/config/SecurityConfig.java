@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,6 +21,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import se.lexicon.flightbooking_api.security.JwtAuthenticationFilter;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -27,10 +29,22 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private static final String[] PUBLIC_DOCUMENTATION_ENDPOINTS = {
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/v3/api-docs/**"
+    };
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Value("${app.cors.allowed-origin:http://localhost:5173}")
-    private String allowedOrigin;
+    /**
+     * Comma-separated list of allowed frontend origins.
+     *
+     * Example:
+     * app.cors.allowed-origins=http://localhost:5173,https://flight-assistant-ui.onrender.com
+     */
+    @Value("${app.cors.allowed-origins:http://localhost:5173}")
+    private String allowedOriginsProperty;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -39,158 +53,129 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration configuration
+            AuthenticationConfiguration authenticationConfiguration
     ) throws Exception {
-        return configuration.getAuthenticationManager();
+        return authenticationConfiguration.getAuthenticationManager();
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http
-    ) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http)
+            throws Exception {
 
-        return http
+        http
                 .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())
 
-                .cors(cors ->
-                        cors.configurationSource(
-                                corsConfigurationSource()
-                        )
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(
-                                SessionCreationPolicy.STATELESS
-                        )
-                )
-
-                /*
-                 * 401: no authentication was provided.
-                 * 403: authenticated user lacks permission.
-                 */
                 .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint(
-                                (request, response, exception) ->
-                                        response.sendError(
-                                                HttpServletResponse.SC_UNAUTHORIZED,
-                                                "Authentication required"
-                                        )
+                        .authenticationEntryPoint((request, response, exception) ->
+                                response.sendError(
+                                        HttpServletResponse.SC_UNAUTHORIZED,
+                                        "Authentication required"
+                                )
                         )
-                        .accessDeniedHandler(
-                                (request, response, exception) ->
-                                        response.sendError(
-                                                HttpServletResponse.SC_FORBIDDEN,
-                                                "Access denied"
-                                        )
+                        .accessDeniedHandler((request, response, exception) ->
+                                response.sendError(
+                                        HttpServletResponse.SC_FORBIDDEN,
+                                        "Access denied"
+                                )
                         )
                 )
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // Allow CORS preflight requests
-                        .requestMatchers(
-                                HttpMethod.OPTIONS,
-                                "/**"
-                        ).permitAll()
+                        // CORS preflight requests
+                        .requestMatchers(HttpMethod.OPTIONS, "/**")
+                        .permitAll()
 
-                        // Authentication endpoints
-                        .requestMatchers(
-                                "/api/auth/**"
-                        ).permitAll()
+                        // Authentication
+                        .requestMatchers("/api/auth/**")
+                        .permitAll()
 
-                        // Swagger/OpenAPI
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**"
-                        ).permitAll()
+                        // Swagger and OpenAPI
+                        .requestMatchers(PUBLIC_DOCUMENTATION_ENDPOINTS)
+                        .permitAll()
 
-                        // Public airport endpoints
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/airports/**"
-                        ).permitAll()
+                        // Public airport search
+                        .requestMatchers(HttpMethod.GET, "/api/airports/**")
+                        .permitAll()
 
-                        // Public available-flight searching
+                        // Public flight search and seat availability
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/flights/available",
-                                "/api/flights/available/**"
-                        ).permitAll()
+                                "/api/flights/available/**",
+                                "/api/flights/*/seats",
+                                "/api/flights/*/seats/class"
+                        )
+                        .permitAll()
 
+                        // Public assistant endpoint
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/assistant/chat"
-                        ).permitAll()
+                        )
+                        .permitAll()
 
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/flights/*/seats",
-                                "/api/flights/*/seats/class"
-                        ).permitAll()
-
+                        // Public conversation deletion, if intentional
                         .requestMatchers(
                                 HttpMethod.DELETE,
                                 "/api/assistant/conversations/*"
-                        ).permitAll()
+                        )
+                        .permitAll()
 
+                        // Protected assistant operations
                         .requestMatchers(
                                 "/api/assistant/conversations/*/actions/**"
-                        ).authenticated()
+                        )
+                        .authenticated()
 
-                        // Booking operations require authentication
+                        // Protected booking and flight management
                         .requestMatchers(
-                                "/api/bookings/**"
-                        ).authenticated()
-
-                        // Other flight operations require authentication
-                        .requestMatchers(
+                                "/api/bookings/**",
                                 "/api/flights/**"
-                        ).authenticated()
+                        )
+                        .authenticated()
 
-                        // Everything else requires authentication
-                        .anyRequest().authenticated()
+                        .anyRequest()
+                        .authenticated()
                 )
 
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
-                )
+                );
 
-                .build();
+        return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration =
-                new CorsConfiguration();
+        CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(
-                List.of(allowedOrigin)
-        );
+        configuration.setAllowedOrigins(getAllowedOrigins());
 
-        configuration.setAllowedMethods(
-                List.of(
-                        "GET",
-                        "POST",
-                        "PUT",
-                        "PATCH",
-                        "DELETE",
-                        "OPTIONS"
-                )
-        );
+        configuration.setAllowedMethods(List.of(
+                HttpMethod.GET.name(),
+                HttpMethod.POST.name(),
+                HttpMethod.PUT.name(),
+                HttpMethod.PATCH.name(),
+                HttpMethod.DELETE.name(),
+                HttpMethod.OPTIONS.name()
+        ));
 
-        configuration.setAllowedHeaders(
-                List.of(
-                        "Authorization",
-                        "Content-Type",
-                        "Accept"
-                )
-        );
+        configuration.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "Accept"
+        ));
 
-        configuration.setExposedHeaders(
-                List.of("Authorization")
-        );
+        configuration.setExposedHeaders(List.of(
+                "Authorization"
+        ));
 
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
@@ -198,11 +183,16 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
-        source.registerCorsConfiguration(
-                "/**",
-                configuration
-        );
+        source.registerCorsConfiguration("/**", configuration);
 
         return source;
+    }
+
+    private List<String> getAllowedOrigins() {
+        return Arrays.stream(allowedOriginsProperty.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isBlank())
+                .distinct()
+                .toList();
     }
 }
