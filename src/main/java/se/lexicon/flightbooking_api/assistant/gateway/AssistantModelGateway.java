@@ -6,5 +6,7 @@ import java.util.List;
 
 public interface AssistantModelGateway {
 
-    String generateReply(List<ChatMessage> conversation);
+    AssistantModelResult generateReply(
+            List<ChatMessage> conversation
+    );
 }

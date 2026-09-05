@@ -37,6 +37,7 @@ class AssistantControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.conversationId").isNotEmpty())
                 .andExpect(jsonPath("$.type").value("TEXT"))
+                .andExpect(jsonPath("$.airports").isArray())
                 .andExpect(jsonPath("$.flights").isArray())
                 .andExpect(jsonPath("$.availableSeats").isArray())
                 .andExpect(jsonPath("$.bookings").isArray())

@@ -26,6 +26,8 @@ assistant:
   history:
     max-messages: 4
     ttl: 30m
+  actions:
+    ttl: 5m
 
 springdoc:
   api-docs:

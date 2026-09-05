@@ -18,7 +18,7 @@ public class DisabledAssistantModelGateway
         implements AssistantModelGateway {
 
     @Override
-    public String generateReply(List<ChatMessage> conversation) {
+    public AssistantModelResult generateReply(List<ChatMessage> conversation) {
         ChatMessage lastUserMessage = conversation.stream()
                 .filter(message -> message.role() == ChatRole.USER)
                 .reduce((first, second) -> second)
@@ -28,7 +28,9 @@ public class DisabledAssistantModelGateway
                         )
                 );
 
-        return "Assistant integration is ready. You said: "
-                + lastUserMessage.content();
+        return AssistantModelResult.text(
+                "Assistant integration is ready. You said: "
+                        + lastUserMessage.content()
+        );
     }
 }

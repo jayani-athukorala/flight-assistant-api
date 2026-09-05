@@ -7,7 +7,10 @@ import se.lexicon.flightbooking_api.assistant.dto.AssistantChatResponse;
 import se.lexicon.flightbooking_api.assistant.dto.AssistantResponseType;
 import se.lexicon.flightbooking_api.assistant.exception.AssistantModelException;
 import se.lexicon.flightbooking_api.assistant.gateway.AssistantModelGateway;
+import se.lexicon.flightbooking_api.assistant.gateway.AssistantModelResult;
 import se.lexicon.flightbooking_api.assistant.history.InMemoryConversationStore;
+import se.lexicon.flightbooking_api.assistant.action.PendingActionStore;
+import se.lexicon.flightbooking_api.assistant.tool.AssistantToolExecutor;
 
 import java.time.Duration;
 
@@ -33,15 +36,20 @@ class AssistantServiceImplTest {
 
         assistantService = new AssistantServiceImpl(
                 conversationStore,
-                modelGateway
+                modelGateway,
+                new PendingActionStore(Duration.ofMinutes(5)),
+                mock(AssistantToolExecutor.class)
         );
     }
 
     @Test
     void returnsModelReply() {
+
         when(modelGateway.generateReply(anyList()))
                 .thenReturn(
-                        "Which city would you like to fly from?"
+                        AssistantModelResult.text(
+                                "Which city would you like to fly from?"
+                        )
                 );
 
         AssistantChatRequest request =
@@ -63,7 +71,7 @@ class AssistantServiceImplTest {
                 );
         assertThat(response.type())
                 .isEqualTo(AssistantResponseType.TEXT);
-        assertThat(response.flights()).isEmpty();
+        assertThat(response.airports()).isEmpty();
         assertThat(response.requiresConfirmation()).isFalse();
     }
 

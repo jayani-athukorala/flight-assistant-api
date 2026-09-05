@@ -1,4 +1,20 @@
-@baseUrl = http://127.0.0.1:8080
+### Flight Assistant API — IntelliJ HTTP Client
+### src/test/http/http-client.private.env.json:
+### {
+###   "local": {
+###     "userEmail": "your-user@example.com",
+###     "userPassword": "your-password",
+###     "flightId": 1,
+###     "outboundSeatId": 1,
+###     "bookingId": 1,
+###     "passengerFirstName": "Test",
+###     "passengerLastName": "Passenger",
+###     "passengerPassportNumber": "TEST123456"
+###   }
+### }
+### Select the "local" environment before running authenticated requests.
+
+@baseUrl = http://localhost:8080
 @origin = Gothenburg
 @destination = Paris
 @departureDate = 2026-09-11

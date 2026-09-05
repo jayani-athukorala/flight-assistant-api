@@ -34,5 +34,5 @@ build/
 
 .env
 .env.*
+http-client.private.env.json
 !.env.example
-

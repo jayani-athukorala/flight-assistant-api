@@ -123,6 +123,15 @@ public class SecurityConfig {
                                 "/api/assistant/chat"
                         ).permitAll()
 
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/assistant/conversations/*"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                "/api/assistant/conversations/*/actions/**"
+                        ).authenticated()
+
                         // Booking operations require authentication
                         .requestMatchers(
                                 "/api/bookings/**"
