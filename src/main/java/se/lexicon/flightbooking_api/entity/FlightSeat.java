@@ -28,6 +28,10 @@ public class FlightSeat {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+//    @Builder.Default
+//    @Column(nullable = false)
+//    private boolean available = true;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "flight_id", nullable = false)
     private Flight flight;

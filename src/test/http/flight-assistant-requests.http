@@ -1,18 +1,4 @@
 ### Flight Assistant API — IntelliJ HTTP Client
-### src/test/http/http-client.private.env.json:
-### {
-###   "local": {
-###     "userEmail": "your-user@example.com",
-###     "userPassword": "your-password",
-###     "flightId": 1,
-###     "outboundSeatId": 1,
-###     "bookingId": 1,
-###     "passengerFirstName": "Test",
-###     "passengerLastName": "Passenger",
-###     "passengerPassportNumber": "TEST123456"
-###   }
-### }
-### Select the "local" environment before running authenticated requests.
 
 @baseUrl = http://localhost:8080
 @origin = Gothenburg
@@ -112,14 +98,58 @@ Content-Type: application/json
 }
 
 > {%
-    client.test("Login returns a JWT", function () {
+    client.test("Login succeeds", function () {
         client.assert(response.status === 200, "Expected HTTP 200");
         client.assert(response.body.token, "JWT token is missing");
     });
+
     client.global.set("accessToken", response.body.token);
 %}
 
-### 7. Authenticated tool — get my bookings
+### 7. Get available seats
+GET {{baseUrl}}/api/flights/{{flightId}}/seats
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+> {%
+    client.test("Available seats returned", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(Array.isArray(response.body), "Expected an array");
+        client.assert(response.body.length > 0, "No available seats found");
+    });
+
+    if (Array.isArray(response.body) && response.body.length > 0) {
+        client.global.set("outboundSeatId", response.body[0].id);
+        client.log("Using seat ID: " + response.body[0].id);
+    }
+%}
+
+### 8. Create authenticated conversation
+POST {{baseUrl}}/api/assistant/chat
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "conversationId": null,
+  "message": "Hello"
+}
+
+> {%
+    client.test("Conversation created", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(
+            response.body.conversationId,
+            "conversationId is missing"
+        );
+    });
+
+    client.global.set(
+        "authenticatedConversationId",
+        response.body.conversationId
+    );
+%}
+
+### 9. Authenticated tool — get my bookings
 POST {{baseUrl}}/api/assistant/chat
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
@@ -137,7 +167,96 @@ Content-Type: application/json
     client.global.set("authenticatedConversationId", response.body.conversationId);
 %}
 
-### 8. Prepare cancellation — must NOT cancel immediately
+### 10.Prepare one-way booking
+POST {{baseUrl}}/api/assistant/chat
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "conversationId": "{{authenticatedConversationId}}",
+  "message": "Book a one-way trip on flight ID {{flightId}} using seat ID {{outboundSeatId}} for {{passengerFirstName}} {{passengerLastName}}, passport {{passengerPassportNumber}}, contact email {{userEmail}}"
+}
+
+> {%
+    client.test("Booking requires confirmation", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+
+        client.assert(
+            response.body.requiresConfirmation === true,
+            "Expected requiresConfirmation=true"
+        );
+
+        client.assert(
+            response.body.pendingAction,
+            "pendingAction is missing"
+        );
+
+        client.assert(
+            response.body.pendingAction.type === "CREATE_BOOKING",
+            "Expected CREATE_BOOKING"
+        );
+
+        client.assert(
+            response.body.pendingAction.actionId,
+            "actionId is missing"
+        );
+    });
+
+    if (response.body.pendingAction) {
+        client.global.set(
+            "bookingActionId",
+            response.body.pendingAction.actionId
+        );
+    }
+%}
+
+### 11. Confirm booking
+POST {{baseUrl}}/api/assistant/conversations/{{authenticatedConversationId}}/actions/{{bookingActionId}}/confirm
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+> {%
+    client.test("Booking created successfully", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+
+        client.assert(
+            response.body.requiresConfirmation === false,
+            "Action must no longer require confirmation"
+        );
+    });
+
+    if (response.body.booking) {
+        client.global.set("createdBookingId", response.body.booking.id);
+        client.log("Created booking ID: " + response.body.booking.id);
+    }
+%}
+
+### 12. Show active bookings
+POST {{baseUrl}}/api/assistant/chat
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "conversationId": "{{authenticatedConversationId}}",
+  "message": "Show my active bookings"
+}
+
+> {%
+    client.test("Active bookings returned", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(
+            Array.isArray(response.body.bookings),
+            "bookings must be an array"
+        );
+        client.assert(
+            response.body.bookings.length > 0,
+            "Expected at least one active booking"
+        );
+    });
+%}
+
+
+### 13. Prepare cancellation — must NOT cancel immediately
 ### bookingId must belong to the authenticated user.
 POST {{baseUrl}}/api/assistant/chat
 Authorization: Bearer {{accessToken}}
@@ -162,7 +281,7 @@ Content-Type: application/json
     }
 %}
 
-### 9A. Confirm cancellation — destructive; run only when intended
+### 14. Confirm cancellation — destructive; run only when intended
 POST {{baseUrl}}/api/assistant/conversations/{{authenticatedConversationId}}/actions/{{cancelActionId}}/confirm
 Authorization: Bearer {{accessToken}}
 
@@ -174,7 +293,7 @@ Authorization: Bearer {{accessToken}}
     });
 %}
 
-### 9B. Reject cancellation instead of 9A
+### 15. 9B. Reject cancellation instead of 9A
 ### Run request 8 again first to obtain a fresh action ID.
 DELETE {{baseUrl}}/api/assistant/conversations/{{authenticatedConversationId}}/actions/{{cancelActionId}}
 Authorization: Bearer {{accessToken}}
@@ -184,35 +303,6 @@ Authorization: Bearer {{accessToken}}
         client.assert(response.status === 204, "Expected HTTP 204");
     });
 %}
-
-### 10. Prepare booking — must NOT create immediately
-### Use IDs that exist and identify an available flight and seat.
-POST {{baseUrl}}/api/assistant/chat
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-  "conversationId": "{{authenticatedConversationId}}",
-  "message": "Book a one-way trip on flight ID {{flightId}} using seat ID {{outboundSeatId}} for {{passengerFirstName}} {{passengerLastName}}, passport {{passengerPassportNumber}}, contact email {{userEmail}}"
-}
-
-> {%
-    client.test("Booking requires confirmation", function () {
-        client.assert(response.status === 200, "Expected HTTP 200");
-        client.assert(response.body.requiresConfirmation === true,
-            "Expected requiresConfirmation=true");
-        client.assert(response.body.pendingAction, "pendingAction is missing");
-        client.assert(response.body.pendingAction.type === "CREATE_BOOKING",
-            "Expected CREATE_BOOKING");
-    });
-    if (response.body.pendingAction) {
-        client.global.set("bookingActionId", response.body.pendingAction.actionId);
-    }
-%}
-
-### 11A. Confirm booking — creates real data; run only when intended
-POST {{baseUrl}}/api/assistant/conversations/{{authenticatedConversationId}}/actions/{{bookingActionId}}/confirm
-Authorization: Bearer {{accessToken}}
 
 ### 11B. Reject booking instead of 11A
 DELETE {{baseUrl}}/api/assistant/conversations/{{authenticatedConversationId}}/actions/{{bookingActionId}}

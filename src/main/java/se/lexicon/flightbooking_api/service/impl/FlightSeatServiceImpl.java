@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.lexicon.flightbooking_api.dto.seat.FlightSeatDto;
+import se.lexicon.flightbooking_api.entity.enums.BookingStatus;
 import se.lexicon.flightbooking_api.entity.enums.SeatClass;
 import se.lexicon.flightbooking_api.mapper.FlightSeatMapper;
 import se.lexicon.flightbooking_api.repository.FlightSeatRepository;
@@ -24,9 +25,12 @@ public class FlightSeatServiceImpl implements FlightSeatService {
             Long flightId
     ) {
         return flightSeatRepository
-                .findAvailableSeatsByClass(
+                .findAvailableSeats(
                         flightId,
-                        null
+                        List.of(
+                                BookingStatus.PENDING,
+                                BookingStatus.CONFIRMED
+                        )
                 )
                 .stream()
                 .map(seat ->
@@ -46,7 +50,11 @@ public class FlightSeatServiceImpl implements FlightSeatService {
         return flightSeatRepository
                 .findAvailableSeatsByClass(
                         flightId,
-                        seatClass
+                        seatClass,
+                        List.of(
+                                BookingStatus.PENDING,
+                                BookingStatus.CONFIRMED
+                        )
                 )
                 .stream()
                 .map(seat ->

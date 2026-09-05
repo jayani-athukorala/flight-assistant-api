@@ -124,6 +124,12 @@ public class SecurityConfig {
                         ).permitAll()
 
                         .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/flights/*/seats",
+                                "/api/flights/*/seats/class"
+                        ).permitAll()
+
+                        .requestMatchers(
                                 HttpMethod.DELETE,
                                 "/api/assistant/conversations/*"
                         ).permitAll()
