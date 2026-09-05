@@ -3,18 +3,14 @@ services:
     image: postgres:16-alpine
     container_name: flight-booking-postgres
     restart: unless-stopped
-
     environment:
       POSTGRES_DB: flight_booking_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-
     ports:
       - "5432:5432"
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d flight_booking_db"]
       interval: 5s
@@ -26,24 +22,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-
     container_name: flight-booking-api
     restart: unless-stopped
-
     depends_on:
       postgres:
         condition: service_healthy
-
     ports:
       - "8080:8080"
-
     environment:
       SPRING_PROFILES_ACTIVE: dev
-
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/flight_booking_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
 
       JWT_SECRET: ${JWT_SECRET}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}

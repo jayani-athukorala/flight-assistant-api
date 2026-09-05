@@ -6,9 +6,11 @@ spring:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     open-in-view: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: ${HIBERNATE_DDL_AUTO:update}
     properties:
@@ -41,7 +43,7 @@ assistant:
     ttl: ${ASSISTANT_ACTION_TTL:5m}
 
 server:
-  port: ${PORT:${SERVER_PORT:8080}}
+  port: ${PORT:8080}
 
 app:
   cors:
@@ -73,4 +75,3 @@ logging:
   level:
     root: INFO
     se.lexicon.flightbooking_api: INFO
-    org.springframework.jdbc.datasource.init: INFO
