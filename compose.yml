@@ -16,18 +16,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U postgres -d flight_booking_db"
-        ]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d flight_booking_db"]
       interval: 5s
       timeout: 5s
       retries: 20
       start_period: 10s
 
   api:
-
     build:
       context: .
       dockerfile: Dockerfile
@@ -43,21 +38,19 @@ services:
       - "8080:8080"
 
     environment:
-
-      OPENAI_ENABLED: ${OPENAI_ENABLED:-false}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
-      OPENAI_TIMEOUT: ${OPENAI_TIMEOUT:-30s}
-      OPENAI_MAX_RETRIES: ${OPENAI_MAX_RETRIES:-2}
-
       SPRING_PROFILES_ACTIVE: dev
 
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/flight_booking_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
 
       JWT_SECRET: ${JWT_SECRET}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+
+      OPENAI_ENABLED: ${OPENAI_ENABLED:-false}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
 
 volumes:
   postgres_data:
