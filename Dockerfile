@@ -1,25 +1,26 @@
-FROM maven:3.9-eclipse-temurin-25 AS build
+FROM maven:3.9.11-eclipse-temurin-25 AS build
 
-WORKDIR /workspace
+WORKDIR /app
 
-COPY pom.xml ./
+COPY pom.xml .
+
+RUN mvn -B \
+    -Dmaven.test.skip=true \
+    -Dmaven.wagon.http.retryHandler.count=5 \
+    dependency:go-offline
+
 COPY src ./src
 
-RUN mvn -DskipTests clean package
+RUN mvn -B \
+    -Dmaven.test.skip=true \
+    -Dmaven.wagon.http.retryHandler.count=5 \
+    clean package
 
 FROM eclipse-temurin:25-jre
 
 WORKDIR /app
 
-RUN groupadd --system spring \
-    && useradd --system --gid spring spring
-
-COPY --from=build \
-    --chown=spring:spring \
-    /workspace/target/*.jar \
-    /app/app.jar
-
-USER spring
+COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
 
