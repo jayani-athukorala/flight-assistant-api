@@ -8,7 +8,7 @@ import java.util.UUID;
 public record AssistantChatRequest(
 
         /*
-         * Null for the first message.
+         * Null for the first message.z
          * The backend creates a new conversation ID.
          */
         UUID conversationId,

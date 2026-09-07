@@ -13,21 +13,19 @@ public final class AssistantToolDefinitions {
 
     @JsonTypeName("search_airports")
     @JsonClassDescription(
-            "Searches airports using a city, airport name, "
-                    + "country or IATA airport code."
+            "Searches airports only when the user explicitly asks about airports."
     )
     public static class SearchAirports {
 
         @JsonPropertyDescription(
-                "Search text such as Gothenburg, Paris, GOT or CDG."
+                "Airport city, name, country or IATA code."
         )
         public String query;
     }
 
     @JsonTypeName("search_available_flights")
     @JsonClassDescription(
-            "Searches scheduled flights between two airports. "
-                    + "Use search_airports first to resolve airport IDs."
+            "Searches available flights using already resolved airport database IDs."
     )
     public static class SearchAvailableFlights {
 
@@ -42,7 +40,7 @@ public final class AssistantToolDefinitions {
         public Long destinationAirportId;
 
         @JsonPropertyDescription(
-                "Optional departure date in ISO-8601 format YYYY-MM-DD."
+                "Required departure date in ISO-8601 YYYY-MM-DD format."
         )
         public String departureDate;
     }

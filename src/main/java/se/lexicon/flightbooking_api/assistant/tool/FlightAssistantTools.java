@@ -18,10 +18,23 @@ public class FlightAssistantTools {
     private final AssistantToolExecutor executor;
     private final AssistantToolResults results;
 
-    @Tool(description = "Search airports by name, city, country or IATA code. Use this before flight search when airport IDs are unknown.")
-    public Object searchAirports(@ToolParam(description = "Search text, for example Gothenburg or GOT") String query) {
+    @Tool(
+            description = """
+                Search airports only when the user explicitly asks to find,
+                identify or list airports.
+
+                Never call this tool when the user asks to search for flights.
+                For flight requests, first collect origin, destination and
+                departure date, then call searchFlightsByLocations.
+                """
+    )
+    public Object searchAirports(
+            @ToolParam(description = "Airport name, city, country or IATA code")
+            String query
+    ) {
         var args = new AssistantToolDefinitions.SearchAirports();
         args.query = query;
+
         return execute(() -> {
             var value = executor.searchAirports(args);
             results.airports(value);
