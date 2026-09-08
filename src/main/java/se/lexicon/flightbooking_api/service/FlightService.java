@@ -4,6 +4,7 @@ import se.lexicon.flightbooking_api.dto.flight.CreateFlightDto;
 import se.lexicon.flightbooking_api.dto.flight.FlightDto;
 
 import java.util.List;
+import java.time.LocalDate;
 
 public interface FlightService {
 
@@ -16,11 +17,17 @@ public interface FlightService {
             Long destinationId
     );
 
+    List<FlightDto> getAvailableFlights(
+            Long originId,
+            Long destinationId,
+            LocalDate date
+    );
+
     FlightDto getFlightById(Long id);
 
     FlightDto createFlight(CreateFlightDto request);
 
     void deleteFlight(Long id);
 
-    void updateDepartedFlights();
+    void updateFlightStatuses();
 }

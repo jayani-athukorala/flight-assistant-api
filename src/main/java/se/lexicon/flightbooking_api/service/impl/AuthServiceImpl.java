@@ -75,11 +75,18 @@ public class AuthServiceImpl
                 )
         );
 
+        User user = userRepository
+                .findByEmail(request.email())
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "The email or password is incorrect"
+                        )
+                );
+
         UserDetails userDetails =
-                userDetailsService
-                        .loadUserByUsername(
-                                request.email()
-                        );
+                userDetailsService.loadUserByUsername(
+                        user.getEmail()
+                );
 
         String token =
                 jwtService.generateToken(
@@ -88,7 +95,8 @@ public class AuthServiceImpl
 
         return new LoginResponseDto(
                 token,
-                userDetails.getUsername()
+                user.getEmail(),
+                user.getRole()
         );
     }
 }

@@ -13,6 +13,6 @@ public class FlightStatusScheduler {
 
     @Scheduled(fixedRate = 60_000)
     public void updateFlightStatuses() {
-        flightService.updateDepartedFlights();
+        flightService.updateFlightStatuses();
     }
 }

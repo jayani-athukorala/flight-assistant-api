@@ -15,6 +15,10 @@ import java.util.List;
 public interface FlightRepository
         extends JpaRepository<Flight, Long> {
 
+    @Override
+    @EntityGraph(attributePaths = {"origin", "destination", "seats"})
+    List<Flight> findAll();
+
     List<Flight> findByFlightNumber(String flightNumber);
 
     @EntityGraph(attributePaths = {
@@ -33,6 +37,19 @@ public interface FlightRepository
             FlightStatus status,
             Long originId,
             Long destinationId
+    );
+
+    @EntityGraph(attributePaths = {
+            "origin",
+            "destination",
+            "seats"
+    })
+    List<Flight> findByStatusAndOrigin_IdAndDestination_IdAndDepartureTimeGreaterThanEqualAndDepartureTimeLessThanOrderByDepartureTimeAsc(
+            FlightStatus status,
+            Long originId,
+            Long destinationId,
+            LocalDateTime startOfDay,
+            LocalDateTime startOfNextDay
     );
 
     List<Flight> findByOriginAndDestination(

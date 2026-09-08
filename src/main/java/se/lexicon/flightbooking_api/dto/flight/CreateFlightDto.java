@@ -1,11 +1,13 @@
 package se.lexicon.flightbooking_api.dto.flight;
 
 import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 public record CreateFlightDto(
 
@@ -29,6 +31,10 @@ public record CreateFlightDto(
 
         @NotNull(message = "Arrival time is required")
         @Future(message = "Arrival time must be in the future")
-        LocalDateTime arrivalTime
+        LocalDateTime arrivalTime,
+
+        @NotNull(message = "Economy base fare is required")
+        @DecimalMin(value = "1.00", message = "Economy base fare must be at least 1.00")
+        BigDecimal economyBasePrice
 
 ) {}

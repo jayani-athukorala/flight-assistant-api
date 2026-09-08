@@ -9,7 +9,9 @@ import se.lexicon.flightbooking_api.dto.flight.*;
 
 import se.lexicon.flightbooking_api.entity.Airport;
 import se.lexicon.flightbooking_api.entity.Flight;
+import se.lexicon.flightbooking_api.entity.FlightSeat;
 import se.lexicon.flightbooking_api.entity.enums.FlightStatus;
+import se.lexicon.flightbooking_api.entity.enums.SeatClass;
 
 import se.lexicon.flightbooking_api.exception.FlightNotFoundException;
 
@@ -22,6 +24,9 @@ import se.lexicon.flightbooking_api.service.FlightService;
 
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Service
@@ -34,63 +39,87 @@ public class FlightServiceImpl implements FlightService {
     private final CreateFlightMapper createFlightMapper;
 
     @Override
-@Transactional(readOnly = true)
-public List<FlightDto> getAllFlights() {
-    return flightMapper.toDtoList(
-            flightRepository.findAll()
-    );
-}
-
-@Override
-@Transactional(readOnly = true)
-public List<FlightDto> getAvailableFlights() {
-    return flightMapper.toDtoList(
-            flightRepository.findByStatus(
-                    FlightStatus.SCHEDULED
-            )
-    );
-}
-
-@Override
-@Transactional(readOnly = true)
-public List<FlightDto> getAvailableFlights(
-        Long originId,
-        Long destinationId
-) {
-    if (originId == null || destinationId == null) {
-        throw new IllegalArgumentException(
-                "Origin and destination IDs are required"
+    @Transactional(readOnly = true)
+    public List<FlightDto> getAllFlights() {
+        return flightMapper.toDtoList(
+                flightRepository.findAll()
         );
     }
 
-    if (originId.equals(destinationId)) {
-        throw new IllegalArgumentException(
-                "Origin and destination must be different"
+    @Override
+    @Transactional(readOnly = true)
+    public List<FlightDto> getAvailableFlights() {
+        return flightMapper.toDtoList(
+                flightRepository.findByStatus(
+                        FlightStatus.SCHEDULED
+                )
         );
     }
 
-    return flightMapper.toDtoList(
-            flightRepository
-                    .findByStatusAndOrigin_IdAndDestination_Id(
-                            FlightStatus.SCHEDULED,
-                            originId,
-                            destinationId
-                    )
-    );
-}
+    @Override
+    @Transactional(readOnly = true)
+    public List<FlightDto> getAvailableFlights(
+            Long originId,
+            Long destinationId
+    ) {
+        return getAvailableFlights(originId, destinationId, null);
+    }
 
-@Override
-@Transactional(readOnly = true)
-public FlightDto getFlightById(Long id) {
-    Flight flight = flightRepository.findById(id)
-            .orElseThrow(
-                    () -> new FlightNotFoundException(id)
+    @Override
+    @Transactional(readOnly = true)
+    public List<FlightDto> getAvailableFlights(
+            Long originId,
+            Long destinationId,
+            LocalDate date
+    ) {
+        if (originId == null || destinationId == null) {
+            throw new IllegalArgumentException(
+                    "Origin and destination IDs are required"
             );
+        }
 
-    return flightMapper.toDto(flight);
-}
+        if (originId.equals(destinationId)) {
+            throw new IllegalArgumentException(
+                    "Origin and destination must be different"
+            );
+        }
+
+        if (date == null) {
+            return flightMapper.toDtoList(
+                    flightRepository
+                            .findByStatusAndOrigin_IdAndDestination_Id(
+                                    FlightStatus.SCHEDULED,
+                                    originId,
+                                    destinationId
+                            )
+            );
+        }
+
+        return flightMapper.toDtoList(
+                flightRepository
+                        .findByStatusAndOrigin_IdAndDestination_IdAndDepartureTimeGreaterThanEqualAndDepartureTimeLessThanOrderByDepartureTimeAsc(
+                                FlightStatus.SCHEDULED,
+                                originId,
+                                destinationId,
+                                date.atStartOfDay(),
+                                date.plusDays(1).atStartOfDay()
+                        )
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FlightDto getFlightById(Long id) {
+        Flight flight = flightRepository.findById(id)
+                .orElseThrow(
+                        () -> new FlightNotFoundException(id)
+                );
+
+        return flightMapper.toDto(flight);
+    }
 
 
+    @Override
     @Transactional
     public FlightDto createFlight(CreateFlightDto request) {
 
@@ -98,6 +127,12 @@ public FlightDto getFlightById(Long id) {
                 .equals(request.destinationAirportId())) {
             throw new IllegalArgumentException(
                     "Origin and destination must be different"
+            );
+        }
+
+        if (!request.arrivalTime().isAfter(request.departureTime())) {
+            throw new IllegalArgumentException(
+                    "Arrival time must be after departure time"
             );
         }
 
@@ -123,6 +158,8 @@ public FlightDto getFlightById(Long id) {
 
         flight.setOrigin(origin);
         flight.setDestination(destination);
+        flight.setStatus(FlightStatus.SCHEDULED);
+        addGeneratedSeats(flight, request.economyBasePrice());
 
         Flight saved = flightRepository.save(flight);
 
@@ -132,27 +169,70 @@ public FlightDto getFlightById(Long id) {
     @Override
     public void deleteFlight(Long id){
         Flight flight = flightRepository.findById(id)
-                        .orElseThrow(() -> new FlightNotFoundException(id));
+                .orElseThrow(() -> new FlightNotFoundException(id));
         flightRepository.delete(flight);
 
     }
 
+    @Override
     @Transactional
-    public void updateDepartedFlights() {
+    public void updateFlightStatuses() {
 
         LocalDateTime now = LocalDateTime.now();
 
-        List<Flight> flights =
-                flightRepository.findByStatusAndDepartureTimeBefore(
-                        FlightStatus.SCHEDULED,
-                        now
-                );
+        List<Flight> flights = flightRepository.findAll();
 
-        flights.forEach(
-                flight -> flight.setStatus(FlightStatus.DEPARTED)
-        );
+        flights.stream()
+                .filter(flight -> flight.getStatus() != FlightStatus.CANCELLED)
+                .filter(flight -> flight.getStatus() != FlightStatus.COMPLETED)
+                .forEach(flight -> {
+                    if (!now.isBefore(flight.getArrivalTime())) {
+                        flight.setStatus(FlightStatus.COMPLETED);
+                    } else if (!now.isBefore(flight.getDepartureTime())) {
+                        flight.setStatus(FlightStatus.DEPARTED);
+                    } else if (!now.isBefore(flight.getDepartureTime().minusHours(2))) {
+                        flight.setStatus(FlightStatus.BOARDING);
+                    } else if (flight.getStatus() == FlightStatus.BOARDING) {
+                        flight.setStatus(FlightStatus.SCHEDULED);
+                    }
+                });
 
         flightRepository.saveAll(flights);
+    }
+
+    private void addGeneratedSeats(Flight flight, BigDecimal economyBasePrice) {
+        addSeat(flight, "1A", SeatClass.FIRST_CLASS, economyBasePrice, "3.20", "500.00");
+        addSeat(flight, "2A", SeatClass.BUSINESS, economyBasePrice, "2.10", "250.00");
+        addSeat(flight, "2B", SeatClass.BUSINESS, economyBasePrice, "2.10", "250.00");
+        addSeat(flight, "5A", SeatClass.PREMIUM_ECONOMY, economyBasePrice, "1.45", "120.00");
+        addSeat(flight, "5B", SeatClass.PREMIUM_ECONOMY, economyBasePrice, "1.45", "120.00");
+        addSeat(flight, "10A", SeatClass.ECONOMY, economyBasePrice, "1.00", "80.00");
+        addSeat(flight, "10B", SeatClass.ECONOMY, economyBasePrice, "1.00", "80.00");
+        addSeat(flight, "11A", SeatClass.ECONOMY, economyBasePrice, "1.00", "50.00");
+        addSeat(flight, "11B", SeatClass.ECONOMY, economyBasePrice, "1.00", "50.00");
+        addSeat(flight, "12A", SeatClass.ECONOMY, economyBasePrice, "1.00", "20.00");
+        addSeat(flight, "12B", SeatClass.ECONOMY, economyBasePrice, "1.00", "20.00");
+        addSeat(flight, "12C", SeatClass.ECONOMY, economyBasePrice, "1.00", "0.00");
+    }
+
+    private void addSeat(
+            Flight flight,
+            String seatNumber,
+            SeatClass seatClass,
+            BigDecimal basePrice,
+            String multiplier,
+            String adjustment
+    ) {
+        BigDecimal price = basePrice
+                .multiply(new BigDecimal(multiplier))
+                .add(new BigDecimal(adjustment))
+                .setScale(2, RoundingMode.HALF_UP);
+
+        flight.addSeat(FlightSeat.builder()
+                .seatNumber(seatNumber)
+                .seatClass(seatClass)
+                .price(price)
+                .build());
     }
 
 }
