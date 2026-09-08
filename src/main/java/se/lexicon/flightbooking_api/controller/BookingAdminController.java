@@ -32,7 +32,10 @@ public class BookingAdminController {
             BookingStatus status,
 
             @RequestParam(required = false)
-            String email,
+            String createdByEmail,
+
+            @RequestParam(required = false)
+            String bookingReference,
 
             @RequestParam(required = false)
             String passportNumber,
@@ -61,7 +64,8 @@ public class BookingAdminController {
         return ResponseEntity.ok(
                 bookingAdminService.searchBookings(
                         status,
-                        email,
+                        createdByEmail,
+                        bookingReference,
                         passportNumber,
                         flightId,
                         from,

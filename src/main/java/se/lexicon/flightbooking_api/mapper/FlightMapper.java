@@ -14,6 +14,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface FlightMapper {
 
+    @Mapping(target = "createdByEmail", source = "createdBy.email")
     @Mapping(
             target = "startingPrice",
             expression = "java(calculateStartingPrice(flight))"
@@ -25,9 +26,9 @@ public interface FlightMapper {
     default BigDecimal calculateStartingPrice(Flight flight) {
         if (
                 flight == null ||
-                flight.getSeats() == null ||
-                !Hibernate.isInitialized(flight.getSeats()) ||
-                flight.getSeats().isEmpty()
+                        flight.getSeats() == null ||
+                        !Hibernate.isInitialized(flight.getSeats()) ||
+                        flight.getSeats().isEmpty()
         ) {
             return null;
         }

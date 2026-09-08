@@ -2,6 +2,7 @@ package se.lexicon.flightbooking_api.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import se.lexicon.flightbooking_api.entity.audit.Auditable;
 import se.lexicon.flightbooking_api.entity.enums.FlightStatus;
 
 import java.time.LocalDateTime;
@@ -14,7 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Flight {
+public class Flight extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

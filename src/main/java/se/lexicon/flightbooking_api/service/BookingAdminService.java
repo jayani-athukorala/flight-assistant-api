@@ -11,7 +11,8 @@ public interface BookingAdminService {
 
     Page<BookingResponseDto> searchBookings(
             BookingStatus status,
-            String email,
+            String createdByEmail,
+            String bookingReference,
             String passportNumber,
             Long flightId,
             LocalDate from,

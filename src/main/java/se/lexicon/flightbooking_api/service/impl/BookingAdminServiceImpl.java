@@ -27,7 +27,8 @@ public class BookingAdminServiceImpl implements BookingAdminService {
     @Transactional(readOnly = true)
     public Page<BookingResponseDto> searchBookings(
             BookingStatus status,
-            String email,
+            String createdByEmail,
+            String bookingReference,
             String passportNumber,
             Long flightId,
             LocalDate from,
@@ -48,18 +49,31 @@ public class BookingAdminServiceImpl implements BookingAdminService {
             );
         }
 
-        if (email != null && !email.isBlank()) {
-            String emailPattern =
-                    "%" + email.trim().toLowerCase() + "%";
+        if (createdByEmail != null && !createdByEmail.isBlank()) {
+            String createdByPattern =
+                    "%" + createdByEmail.trim().toLowerCase() + "%";
 
             specification = specification.and(
                     (root, query, cb) ->
                             cb.like(
                                     cb.lower(
-                                            root.get("user")
+                                            root.get("createdBy")
                                                     .get("email")
                                     ),
-                                    emailPattern
+                                    createdByPattern
+                            )
+            );
+        }
+
+        if (bookingReference != null && !bookingReference.isBlank()) {
+            String referencePattern =
+                    "%" + bookingReference.trim().toLowerCase() + "%";
+
+            specification = specification.and(
+                    (root, query, cb) ->
+                            cb.like(
+                                    cb.lower(root.get("bookingReference")),
+                                    referencePattern
                             )
             );
         }

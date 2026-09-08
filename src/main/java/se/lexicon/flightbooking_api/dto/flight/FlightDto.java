@@ -10,6 +10,7 @@ public record FlightDto(
         Long id,
         String flightNumber,
         String airline,
+        String createdByEmail,
         AirportResponseDto origin,
         AirportResponseDto destination,
         LocalDateTime departureTime,

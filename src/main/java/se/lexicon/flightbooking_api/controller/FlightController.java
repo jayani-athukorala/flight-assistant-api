@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import se.lexicon.flightbooking_api.dto.flight.FlightDto;
 import se.lexicon.flightbooking_api.dto.flight.CreateFlightDto;
+import se.lexicon.flightbooking_api.entity.enums.FlightStatus;
 import jakarta.validation.Valid;
 import se.lexicon.flightbooking_api.service.FlightService;
 
@@ -41,10 +42,22 @@ public class FlightController {
                     description = "Flights retrieved successfully"
             )
     })
-    public ResponseEntity<List<FlightDto>> getAllFlights() {
+    public ResponseEntity<List<FlightDto>> getAllFlights(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate date,
+            @RequestParam(required = false) FlightStatus status,
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String createdByEmail
+    ) {
 
         return ResponseEntity.ok(
-                flightService.getAllFlights()
+                flightService.searchFlights(
+                        date,
+                        status,
+                        query,
+                        createdByEmail
+                )
         );
     }
 

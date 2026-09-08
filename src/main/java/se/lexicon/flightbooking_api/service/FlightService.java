@@ -2,6 +2,7 @@ package se.lexicon.flightbooking_api.service;
 
 import se.lexicon.flightbooking_api.dto.flight.CreateFlightDto;
 import se.lexicon.flightbooking_api.dto.flight.FlightDto;
+import se.lexicon.flightbooking_api.entity.enums.FlightStatus;
 
 import java.util.List;
 import java.time.LocalDate;
@@ -9,6 +10,13 @@ import java.time.LocalDate;
 public interface FlightService {
 
     List<FlightDto> getAllFlights();
+
+    List<FlightDto> searchFlights(
+            LocalDate date,
+            FlightStatus status,
+            String query,
+            String createdByEmail
+    );
 
     List<FlightDto> getAvailableFlights();
 

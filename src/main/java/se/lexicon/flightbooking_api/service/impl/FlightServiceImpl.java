@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.jpa.domain.Specification;
 import se.lexicon.flightbooking_api.dto.flight.*;
 
 import se.lexicon.flightbooking_api.entity.Airport;
@@ -63,6 +64,57 @@ public class FlightServiceImpl implements FlightService {
             Long destinationId
     ) {
         return getAvailableFlights(originId, destinationId, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<FlightDto> searchFlights(
+            LocalDate date,
+            FlightStatus status,
+            String query,
+            String createdByEmail
+    ) {
+        Specification<Flight> specification = Specification.unrestricted();
+
+        if (date != null) {
+            LocalDateTime start = date.atStartOfDay();
+            LocalDateTime end = date.plusDays(1).atStartOfDay();
+            specification = specification.and((root, ignored, cb) ->
+                    cb.and(
+                            cb.greaterThanOrEqualTo(root.get("departureTime"), start),
+                            cb.lessThan(root.get("departureTime"), end)
+                    )
+            );
+        }
+
+        if (status != null) {
+            specification = specification.and((root, ignored, cb) ->
+                    cb.equal(root.get("status"), status)
+            );
+        }
+
+        if (query != null && !query.isBlank()) {
+            String pattern = "%" + query.trim().toLowerCase() + "%";
+            specification = specification.and((root, ignored, cb) ->
+                    cb.or(
+                            cb.like(cb.lower(root.get("flightNumber")), pattern),
+                            cb.like(cb.lower(root.get("airline")), pattern),
+                            cb.like(cb.lower(root.get("origin").get("code")), pattern),
+                            cb.like(cb.lower(root.get("origin").get("city")), pattern),
+                            cb.like(cb.lower(root.get("destination").get("code")), pattern),
+                            cb.like(cb.lower(root.get("destination").get("city")), pattern)
+                    )
+            );
+        }
+
+        if (createdByEmail != null && !createdByEmail.isBlank()) {
+            String pattern = "%" + createdByEmail.trim().toLowerCase() + "%";
+            specification = specification.and((root, ignored, cb) ->
+                    cb.like(cb.lower(root.get("createdBy").get("email")), pattern)
+            );
+        }
+
+        return flightMapper.toDtoList(flightRepository.findAll(specification));
     }
 
     @Override

@@ -13,6 +13,7 @@ import java.util.List;
 public record BookingResponseDto(
         Long id,
         String bookingReference,
+        String createdByEmail,
         LocalDateTime bookingDate,
         LocalDateTime cancelledAt,
         LocalDateTime archivedAt,

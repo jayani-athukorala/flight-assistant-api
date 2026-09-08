@@ -2,6 +2,8 @@ package se.lexicon.flightbooking_api.repository;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
 import se.lexicon.flightbooking_api.entity.Airport;
@@ -13,11 +15,15 @@ import java.util.List;
 
 @Repository
 public interface FlightRepository
-        extends JpaRepository<Flight, Long> {
+        extends JpaRepository<Flight, Long>, JpaSpecificationExecutor<Flight> {
 
     @Override
     @EntityGraph(attributePaths = {"origin", "destination", "seats"})
     List<Flight> findAll();
+
+    @Override
+    @EntityGraph(attributePaths = {"origin", "destination", "seats", "createdBy"})
+    List<Flight> findAll(Specification<Flight> specification);
 
     List<Flight> findByFlightNumber(String flightNumber);
 
