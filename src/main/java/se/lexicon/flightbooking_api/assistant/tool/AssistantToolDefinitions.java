@@ -45,6 +45,22 @@ public final class AssistantToolDefinitions {
         public String departureDate;
     }
 
+    @JsonTypeName("search_flights_by_locations")
+    @JsonClassDescription(
+            "Resolves user-facing city, airport, or IATA values and searches flights. "
+                    + "Use this for conversational flight searches that do not contain database IDs."
+    )
+    public static class SearchFlightsByLocations {
+        @JsonPropertyDescription("Origin city, airport name, or IATA code.")
+        public String origin;
+
+        @JsonPropertyDescription("Destination city, airport name, or IATA code.")
+        public String destination;
+
+        @JsonPropertyDescription("Required departure date in YYYY-MM-DD format.")
+        public String departureDate;
+    }
+
     @JsonTypeName("get_available_seats")
     @JsonClassDescription(
             "Returns currently available seats for a flight. "
@@ -92,6 +108,19 @@ public final class AssistantToolDefinitions {
                 "Selected return flight-seat ID, or null for a one-way trip."
         )
         public Long returnSeatId;
+    }
+
+    @JsonTypeName("request_passenger_details")
+    @JsonClassDescription("Renders the passenger form after all outbound and optional return seats are selected.")
+    public static class RequestPassengerDetails {
+        @JsonPropertyDescription("Selected outbound flight ID.")
+        public Long outboundFlightId;
+        @JsonPropertyDescription("Selected return flight ID, or null for one-way.")
+        public Long returnFlightId;
+        @JsonPropertyDescription("Selected outbound flight-seat IDs, in passenger order.")
+        public List<Long> outboundSeatIds;
+        @JsonPropertyDescription("Selected return flight-seat IDs in matching passenger order, or empty for one-way.")
+        public List<Long> returnSeatIds;
     }
 
     @JsonTypeName("create_booking")

@@ -6,11 +6,16 @@ import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 import se.lexicon.flightbooking_api.assistant.exception.AssistantAuthenticationRequiredException;
 
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-/** The only application operations exposed to the AI model. */
+/**
+ * Read-only assistant tools.
+ *
+ * Booking creation, seat selection and cancellation are intentionally handled by
+ * the normal React booking components and the normal booking REST endpoints.
+ * This keeps one booking implementation instead of maintaining an AI-specific one.
+ */
 @Component
 @RequiredArgsConstructor
 public class FlightAssistantTools {
@@ -42,15 +47,17 @@ public class FlightAssistantTools {
         });
     }
 
-    @Tool(description = "Search available flights between two airport database IDs, optionally on an ISO date.")
+    @Tool(description = "Search available flights between two trusted airport database IDs on an optional ISO date.")
     public Object searchAvailableFlights(
             @ToolParam(description = "Origin airport database ID") Long originAirportId,
             @ToolParam(description = "Destination airport database ID") Long destinationAirportId,
-            @ToolParam(description = "Optional date in YYYY-MM-DD format", required = false) String departureDate) {
+            @ToolParam(description = "Optional date in YYYY-MM-DD format", required = false) String departureDate
+    ) {
         var args = new AssistantToolDefinitions.SearchAvailableFlights();
         args.originAirportId = originAirportId;
         args.destinationAirportId = destinationAirportId;
         args.departureDate = departureDate;
+
         return execute(() -> {
             var value = executor.searchAvailableFlights(args);
             results.flights(value);
@@ -58,56 +65,36 @@ public class FlightAssistantTools {
         });
     }
 
-    @Tool(description = "Get currently available seats for a flight. This operation is public.")
-    public Object getAvailableSeats(
-            @ToolParam(description = "Flight database ID") Long flightId,
-            @ToolParam(description = "Optional seat class", required = false) String seatClass) {
-        var args = new AssistantToolDefinitions.GetAvailableSeats();
-        args.flightId = flightId;
-        args.seatClass = seatClass;
+    @Tool(description = "Resolve conversational city, airport, or IATA values and search flights on an ISO date. Use this when database airport IDs were not supplied by the React flight-search modal.")
+    public Object searchFlightsByLocations(
+            @ToolParam(description = "Origin city, airport name, or IATA code") String origin,
+            @ToolParam(description = "Destination city, airport name, or IATA code") String destination,
+            @ToolParam(description = "Departure date in YYYY-MM-DD format") String departureDate
+    ) {
+        var args = new AssistantToolDefinitions.SearchFlightsByLocations();
+        args.origin = origin;
+        args.destination = destination;
+        args.departureDate = departureDate;
+
         return execute(() -> {
-            var value = executor.getAvailableSeats(args);
-            results.seats(value);
+            var value = executor.searchFlightsByLocations(args);
+            results.flights(value);
             return value;
         });
     }
 
-    @Tool(description = "Get bookings owned by the authenticated user. Never request an email for authorization.")
+    @Tool(description = "Get active or archived bookings owned by the authenticated user. Never request an email for authorization.")
     public Object getMyBookings(
-            @ToolParam(description = "Whether archived bookings should be returned", required = false) boolean archived) {
+            @ToolParam(description = "Whether archived bookings should be returned", required = false)
+            boolean archived
+    ) {
         var args = new AssistantToolDefinitions.GetMyBookings();
         args.archived = archived;
+
         return execute(() -> {
             var value = executor.getMyBookings(args);
             results.bookings(value);
             return value;
-        });
-    }
-
-    @Tool(description = "Prepare a booking for explicit confirmation. This never creates the booking immediately.")
-    public Object createBooking(
-            @ToolParam(description = "Outbound flight ID") Long outboundFlightId,
-            @ToolParam(description = "Optional return flight ID", required = false) Long returnFlightId,
-            @ToolParam(description = "Passengers with selected seat IDs") List<AssistantToolDefinitions.PassengerInput> passengers) {
-        var args = new AssistantToolDefinitions.CreateBooking();
-        args.outboundFlightId = outboundFlightId;
-        args.returnFlightId = returnFlightId;
-        args.passengers = passengers;
-        return execute(() -> {
-            var value = executor.prepareCreateBooking(args);
-            results.pending(value);
-            return Map.of("status", "confirmation_required", "description", value.description());
-        });
-    }
-
-    @Tool(description = "Prepare cancellation of an owned booking for explicit confirmation. This never cancels immediately.")
-    public Object cancelBooking(@ToolParam(description = "Booking database ID") Long bookingId) {
-        var args = new AssistantToolDefinitions.CancelBooking();
-        args.bookingId = bookingId;
-        return execute(() -> {
-            var value = executor.prepareCancelBooking(args);
-            results.pending(value);
-            return Map.of("status", "confirmation_required", "description", value.description());
         });
     }
 
@@ -116,7 +103,10 @@ public class FlightAssistantTools {
             return operation.get();
         } catch (AssistantAuthenticationRequiredException exception) {
             results.authenticationRequired();
-            return Map.of("authenticationRequired", true, "error", exception.getMessage());
+            return Map.of(
+                    "authenticationRequired", true,
+                    "error", exception.getMessage()
+            );
         } catch (IllegalArgumentException | IllegalStateException exception) {
             return Map.of("error", exception.getMessage());
         }

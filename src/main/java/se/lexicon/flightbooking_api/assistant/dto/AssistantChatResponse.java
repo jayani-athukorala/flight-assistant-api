@@ -16,6 +16,7 @@ public record AssistantChatResponse(
         List<FlightDto> flights,
         List<FlightSeatDto> availableSeats,
         List<BookingResponseDto> bookings,
+        PassengerFormSpec passengerForm,
         boolean requiresConfirmation,
         PendingAssistantAction pendingAction
 ) {

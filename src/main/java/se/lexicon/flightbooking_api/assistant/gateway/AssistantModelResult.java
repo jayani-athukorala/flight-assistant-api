@@ -5,6 +5,7 @@ import se.lexicon.flightbooking_api.dto.flight.FlightDto;
 import se.lexicon.flightbooking_api.dto.booking.BookingResponseDto;
 import se.lexicon.flightbooking_api.dto.seat.FlightSeatDto;
 import se.lexicon.flightbooking_api.assistant.action.PendingActionProposal;
+import se.lexicon.flightbooking_api.assistant.dto.PassengerFormSpec;
 
 import java.util.List;
 
@@ -14,6 +15,7 @@ public record AssistantModelResult(
         List<FlightDto> flights,
         List<FlightSeatDto> availableSeats,
         List<BookingResponseDto> bookings,
+        PassengerFormSpec passengerForm,
         PendingActionProposal pendingAction,
         boolean authenticationRequired
 ) {
@@ -48,6 +50,7 @@ public record AssistantModelResult(
                 List.of(),
                 List.of(),
                 List.of(),
+                null,
                 null,
                 false
         );

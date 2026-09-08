@@ -7,6 +7,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import se.lexicon.flightbooking_api.assistant.action.PendingActionProposal;
 import se.lexicon.flightbooking_api.assistant.exception.AssistantAuthenticationRequiredException;
+import se.lexicon.flightbooking_api.assistant.dto.PassengerFormSpec;
 import se.lexicon.flightbooking_api.dto.airport.AirportResponseDto;
 import se.lexicon.flightbooking_api.dto.booking.BookingRequestDto;
 import se.lexicon.flightbooking_api.dto.booking.BookingResponseDto;
@@ -18,6 +19,7 @@ import se.lexicon.flightbooking_api.service.BookingService;
 import se.lexicon.flightbooking_api.service.FlightSeatService;
 
 import java.util.List;
+import java.util.HashSet;
 
 import se.lexicon.flightbooking_api.dto.flight.FlightDto;
 import se.lexicon.flightbooking_api.service.FlightService;
@@ -123,6 +125,27 @@ public class AssistantToolExecutor {
                 .toList();
     }
 
+    public List<FlightDto> searchFlightsByLocations(
+            AssistantToolDefinitions.SearchFlightsByLocations arguments
+    ) {
+        if (arguments == null || isBlank(arguments.origin)) {
+            throw new IllegalArgumentException("Origin city or airport is required");
+        }
+        if (isBlank(arguments.destination)) {
+            throw new IllegalArgumentException("Destination city or airport is required");
+        }
+
+        AirportResponseDto origin = resolveAirport(arguments.origin, "origin");
+        AirportResponseDto destination = resolveAirport(arguments.destination, "destination");
+
+        AssistantToolDefinitions.SearchAvailableFlights search =
+                new AssistantToolDefinitions.SearchAvailableFlights();
+        search.originAirportId = origin.id();
+        search.destinationAirportId = destination.id();
+        search.departureDate = arguments.departureDate;
+        return searchAvailableFlights(search);
+    }
+
     public List<FlightSeatDto> getAvailableSeats(
             AssistantToolDefinitions.GetAvailableSeats arguments
     ) {
@@ -155,6 +178,60 @@ public class AssistantToolExecutor {
         requireAuthenticatedUser();
         boolean archived = arguments != null && arguments.archived;
         return bookingService.getMyBookings(archived);
+    }
+
+    public PassengerFormSpec requestPassengerDetails(
+            AssistantToolDefinitions.RequestPassengerDetails arguments
+    ) {
+        requireAuthenticatedUser();
+        if (arguments == null || arguments.outboundFlightId == null) {
+            throw new IllegalArgumentException("Outbound flight ID is required");
+        }
+        if (arguments.outboundSeatIds == null || arguments.outboundSeatIds.isEmpty()) {
+            throw new IllegalArgumentException("Select at least one outbound seat");
+        }
+        if (new HashSet<>(arguments.outboundSeatIds).size() != arguments.outboundSeatIds.size()) {
+            throw new IllegalArgumentException("Outbound seats must be unique");
+        }
+        List<Long> returnIds = arguments.returnSeatIds == null ? List.of() : arguments.returnSeatIds;
+        if (arguments.returnFlightId == null && !returnIds.isEmpty()) {
+            throw new IllegalArgumentException("Return seats require a return flight");
+        }
+        if (arguments.returnFlightId != null && returnIds.size() != arguments.outboundSeatIds.size()) {
+            throw new IllegalArgumentException("Select one return seat for each passenger");
+        }
+        if (new HashSet<>(returnIds).size() != returnIds.size()) {
+            throw new IllegalArgumentException("Return seats must be unique");
+        }
+
+        var outboundSeats = flightSeatService.getAvailableSeats(arguments.outboundFlightId);
+        var returnSeats = arguments.returnFlightId == null
+                ? List.<FlightSeatDto>of()
+                : flightSeatService.getAvailableSeats(arguments.returnFlightId);
+
+        List<PassengerFormSpec.PassengerSeatPair> pairs =
+                java.util.stream.IntStream.range(0, arguments.outboundSeatIds.size())
+                        .mapToObj(index -> {
+                            Long outboundId = arguments.outboundSeatIds.get(index);
+                            FlightSeatDto outbound = outboundSeats.stream()
+                                    .filter(seat -> seat.id().equals(outboundId))
+                                    .findFirst()
+                                    .orElseThrow(() -> new IllegalArgumentException(
+                                            "An outbound seat is no longer available"));
+                            Long returnId = arguments.returnFlightId == null ? null : returnIds.get(index);
+                            FlightSeatDto returnSeat = returnId == null ? null : returnSeats.stream()
+                                                                                 .filter(seat -> seat.id().equals(returnId))
+                                                                                 .findFirst()
+                                                                                 .orElseThrow(() -> new IllegalArgumentException(
+                                                                                         "A return seat is no longer available"));
+                            return new PassengerFormSpec.PassengerSeatPair(
+                                    outbound.id(), outbound.seatNumber(),
+                                    returnSeat == null ? null : returnSeat.id(),
+                                    returnSeat == null ? null : returnSeat.seatNumber());
+                        })
+                        .toList();
+
+        return new PassengerFormSpec(arguments.outboundFlightId, arguments.returnFlightId, pairs);
     }
 
     public PendingActionProposal prepareCreateBooking(
@@ -252,6 +329,35 @@ public class AssistantToolExecutor {
                 passenger.email.trim(),
                 passenger.outboundSeatId,
                 passenger.returnSeatId
+        );
+    }
+
+    private AirportResponseDto resolveAirport(String value, String label) {
+        String normalized = value.trim();
+        List<AirportResponseDto> matches = airportService.search(normalized, AIRPORT_RESULT_LIMIT);
+        if (matches.isEmpty()) {
+            throw new IllegalArgumentException("No " + label + " airport was found for " + normalized);
+        }
+
+        List<AirportResponseDto> exactCode = matches.stream()
+                .filter(airport -> airport.code().equalsIgnoreCase(normalized))
+                .toList();
+        if (exactCode.size() == 1) return exactCode.getFirst();
+
+        List<AirportResponseDto> exactName = matches.stream()
+                .filter(airport -> airport.name().equalsIgnoreCase(normalized))
+                .toList();
+        if (exactName.size() == 1) return exactName.getFirst();
+
+        List<AirportResponseDto> exactCity = matches.stream()
+                .filter(airport -> airport.city().equalsIgnoreCase(normalized))
+                .toList();
+        if (exactCity.size() == 1) return exactCity.getFirst();
+        if (matches.size() == 1) return matches.getFirst();
+
+        throw new IllegalArgumentException(
+                "Multiple " + label + " airports match " + normalized
+                        + "; ask the user to choose one of the returned IATA codes"
         );
     }
 

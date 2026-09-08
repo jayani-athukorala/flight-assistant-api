@@ -7,6 +7,7 @@ import se.lexicon.flightbooking_api.dto.airport.AirportResponseDto;
 import se.lexicon.flightbooking_api.dto.booking.BookingResponseDto;
 import se.lexicon.flightbooking_api.dto.flight.FlightDto;
 import se.lexicon.flightbooking_api.dto.seat.FlightSeatDto;
+import se.lexicon.flightbooking_api.assistant.dto.PassengerFormSpec;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,7 @@ public class AssistantToolResults {
     public void flights(List<FlightDto> value) { state().flights.addAll(value); }
     public void seats(List<FlightSeatDto> value) { state().seats.addAll(value); }
     public void bookings(List<BookingResponseDto> value) { state().bookings.addAll(value); }
+    public void passengerForm(PassengerFormSpec value) { state().passengerForm = value; }
     public void pending(PendingActionProposal value) { state().pendingAction = value; }
     public void authenticationRequired() { state().authenticationRequired = true; }
 
@@ -29,7 +31,7 @@ public class AssistantToolResults {
         State value = state();
         try {
             return new AssistantModelResult(message, value.airports, value.flights,
-                    value.seats, value.bookings, value.pendingAction,
+                    value.seats, value.bookings, value.passengerForm, value.pendingAction,
                     value.authenticationRequired);
         } finally {
             current.remove();
@@ -49,6 +51,7 @@ public class AssistantToolResults {
         private final List<FlightDto> flights = new ArrayList<>();
         private final List<FlightSeatDto> seats = new ArrayList<>();
         private final List<BookingResponseDto> bookings = new ArrayList<>();
+        private PassengerFormSpec passengerForm;
         private PendingActionProposal pendingAction;
         private boolean authenticationRequired;
     }

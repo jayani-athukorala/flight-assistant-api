@@ -200,6 +200,31 @@ class AssistantToolExecutorTest {
     }
 
     @Test
+    void resolvesSingleCityAirportsAndSearchesFlights() {
+        AirportResponseDto origin = new AirportResponseDto(
+                2L, "GOT", "Goteborg Landvetter Airport", "Gothenburg", "Sweden");
+        AirportResponseDto destination = new AirportResponseDto(
+                3L, "CDG", "Charles de Gaulle Airport", "Paris", "France");
+        FlightDto flight = new FlightDto(
+                12L, "SK201", "SAS", origin, destination,
+                LocalDateTime.of(2026, 9, 15, 8, 15),
+                LocalDateTime.of(2026, 9, 15, 10, 30),
+                FlightStatus.SCHEDULED, new BigDecimal("919.00"));
+
+        when(airportService.search("Gothenburg", 10)).thenReturn(List.of(origin));
+        when(airportService.search("Paris", 10)).thenReturn(List.of(destination));
+        when(flightService.getAvailableFlights(2L, 3L)).thenReturn(List.of(flight));
+
+        var arguments = new AssistantToolDefinitions.SearchFlightsByLocations();
+        arguments.origin = "Gothenburg";
+        arguments.destination = "Paris";
+        arguments.departureDate = "2026-09-15";
+
+        assertThat(toolExecutor.searchFlightsByLocations(arguments)).containsExactly(flight);
+        verify(flightService).getAvailableFlights(2L, 3L);
+    }
+
+    @Test
     void anonymousUserCannotReadPersonalBookings() {
         SecurityContextHolder.clearContext();
 

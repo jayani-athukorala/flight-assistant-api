@@ -70,6 +70,7 @@ public class AssistantServiceImpl implements AssistantService {
                     result.flights(),
                     result.availableSeats(),
                     result.bookings(),
+                    result.passengerForm(),
                     pendingAction);
         } catch (AssistantModelException exception) {
             log.error(
@@ -85,6 +86,7 @@ public class AssistantServiceImpl implements AssistantService {
                     List.of(),
                     List.of(),
                     List.of(),
+                    null,
                     null);
         }
     }
@@ -112,6 +114,7 @@ public class AssistantServiceImpl implements AssistantService {
                     List.of(),
                     List.of(),
                     List.of(booking),
+                    null,
                     null);
         }
 
@@ -127,6 +130,7 @@ public class AssistantServiceImpl implements AssistantService {
                 List.of(),
                 List.of(),
                 List.of(booking),
+                null,
                 null);
     }
 
@@ -155,6 +159,9 @@ public class AssistantServiceImpl implements AssistantService {
         if (result.authenticationRequired()) {
             return AssistantResponseType.AUTHENTICATION_REQUIRED;
         }
+        if (result.passengerForm() != null) {
+            return AssistantResponseType.PASSENGER_DETAILS_REQUIRED;
+        }
         if (!result.bookings().isEmpty()) {
             return AssistantResponseType.BOOKING_RESULTS;
         }
@@ -178,6 +185,7 @@ public class AssistantServiceImpl implements AssistantService {
             List<FlightDto> flights,
             List<FlightSeatDto> seats,
             List<BookingResponseDto> bookings,
+            PassengerFormSpec passengerForm,
             PendingAssistantAction pendingAction
     ) {
         return new AssistantChatResponse(
@@ -188,6 +196,7 @@ public class AssistantServiceImpl implements AssistantService {
                 flights,
                 seats,
                 bookings,
+                passengerForm,
                 pendingAction != null,
                 pendingAction);
     }
