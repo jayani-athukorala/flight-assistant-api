@@ -130,6 +130,7 @@ class AssistantToolExecutorTest {
                         10L,
                         "SK123",
                         "SAS",
+                        "john@test.com",
                         origin,
                         destination,
                         LocalDateTime.of(
@@ -147,6 +148,7 @@ class AssistantToolExecutorTest {
                         11L,
                         "SK125",
                         "SAS",
+                        "john@test.com",
                         origin,
                         destination,
                         LocalDateTime.of(
@@ -206,7 +208,7 @@ class AssistantToolExecutorTest {
         AirportResponseDto destination = new AirportResponseDto(
                 3L, "CDG", "Charles de Gaulle Airport", "Paris", "France");
         FlightDto flight = new FlightDto(
-                12L, "SK201", "SAS", origin, destination,
+                12L, "SK201", "SAS", "john@test.com",origin, destination,
                 LocalDateTime.of(2026, 9, 15, 8, 15),
                 LocalDateTime.of(2026, 9, 15, 10, 30),
                 FlightStatus.SCHEDULED, new BigDecimal("919.00"));
