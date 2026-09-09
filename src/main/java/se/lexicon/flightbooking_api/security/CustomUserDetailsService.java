@@ -2,8 +2,11 @@ package se.lexicon.flightbooking_api.security;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.*;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import se.lexicon.flightbooking_api.entity.User;
 import se.lexicon.flightbooking_api.repository.UserRepository;
 
@@ -17,20 +20,21 @@ public class CustomUserDetailsService
     private final UserRepository userRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(
             String email
     ) throws UsernameNotFoundException {
 
-        User user =
-                userRepository
-                        .findByEmail(email)
-                        .orElseThrow(
-                                () -> new UsernameNotFoundException(
-                                        "User not found: " + email
-                                )
-                        );
+        User user = userRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException(
+                                "User not found: " + email
+                        )
+                );
 
-        return new org.springframework.security.core.userdetails.User(
+        return new AuthenticatedUser(
+                user.getId(),
                 user.getEmail(),
                 user.getPassword(),
                 List.of(

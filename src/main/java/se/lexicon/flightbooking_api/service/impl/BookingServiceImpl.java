@@ -346,17 +346,21 @@ public class BookingServiceImpl implements BookingService {
     private void validateFlightCanBeBooked(
             Flight flight
     ) {
-
         if (flight.getStatus() == FlightStatus.CANCELLED) {
-
             throw new IllegalStateException(
                     "Flight has been cancelled"
             );
         }
 
-        if (flight.getDepartureTime()
-                .isBefore(LocalDateTime.now())) {
+        if (flight.getStatus() == FlightStatus.FULL) {
+            throw new IllegalStateException(
+                    "Flight is fully booked"
+            );
+        }
 
+        if (flight.getStatus() == FlightStatus.COMPLETED
+                || flight.getStatus() == FlightStatus.DEPARTED
+                || flight.getDepartureTime().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException(
                     "Flight has already departed"
             );
@@ -383,7 +387,6 @@ public class BookingServiceImpl implements BookingService {
     private void bookingSeatMustBeAvailable(
             FlightSeat seat
     ) {
-
         boolean booked =
                 bookingSeatRepository
                         .existsBySeatIdAndBookingStatus(
@@ -392,11 +395,8 @@ public class BookingServiceImpl implements BookingService {
                         );
 
         if (booked) {
-
-            throw new IllegalStateException(
-                    "Seat "
-                            + seat.getSeatNumber()
-                            + " is already booked"
+            throw new SeatUnavailableException(
+                    seat.getSeatNumber()
             );
         }
     }
